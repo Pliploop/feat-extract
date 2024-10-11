@@ -4,6 +4,7 @@ import torch
 import os
 import random
 from tqdm import tqdm
+import pandas as pd
 
 
 
@@ -31,21 +32,21 @@ class TextAudioDataset(Dataset):
         self.truncate_preextracted = truncate_preextracted
         
         # get unique file name indices and caption indices for annotations
-        # annot_df = pd.DataFrame(annotations)
+        annot_df = pd.DataFrame(annotations)
         # get label index for each unique file name
         
         ## get the index for each unique file name in order of appearance
         
-        # try:
-        #     uniques = annot_df['file_path'].unique()
-        #     annot_df['file_index'] = annot_df['file_path'].apply(lambda x: np.where(uniques == x)[0][0])
+        try:
+            uniques = annot_df['file_path'].unique()
+            annot_df['file_index'] = annot_df['file_path'].apply(lambda x: np.where(uniques == x)[0][0])
             
             
-        # except:
-        #     pass
+        except:
+            pass
         
-        # for i, annot in enumerate(annotations):
-        #     annot['file_index'] = annot_df.loc[i,'file_index']
+        for i, annot in enumerate(annotations):
+            annot['file_index'] = annot_df.loc[i,'file_index']
             # annot['caption_index'] = annot_df.loc[i,'caption_index']
             
         if root_dir is not None and new_dir is not None:
@@ -139,7 +140,7 @@ class TextAudioDataset(Dataset):
                 return_dict['plusprompt'] = pluscaption
                 return_dict['minusprompt'] = minuscaption
                 
-        # return_dict['file_idx'] = annot['file_index']
+        return_dict['file_idx'] = annot['file_index']
 
                 
         return return_dict

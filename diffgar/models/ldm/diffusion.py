@@ -14,6 +14,7 @@ from pytorch_lightning.cli import OptimizerCallable
 # import optim
 from torch import optim
 from diffgar.models.utils.schedulers import *
+from .text_encoders import T5TextEncoder
 
 import yaml
 
@@ -26,8 +27,11 @@ def get_encoder_pair(encoder_pair, encoder_pair_kwargs=None):
     if encoder_pair == "clap":
         return CLAP_Module(**encoder_pair_kwargs)
     elif encoder_pair == "muscall":
-        return MusCALLModule(**encoder_pair_kwargs)
+        return MusCALL_Module(**encoder_pair_kwargs)
     
+def get_text_encoder(text_encoder, text_encoder_kwargs=None):
+    if text_encoder == 'T5':
+        return T5TextEncoder(**text_encoder_kwargs)
     
     
 class Slider(nn.Module):
@@ -53,9 +57,12 @@ class Slider(nn.Module):
 class DiffGarLDM(nn.Module):
     def __init__(
         self,
-        encoder_pair='clap',
+        encoder_pair='clap', ## this will be used for clap score, but the text encoder can be different
         encoder_pair_kwargs=None,
         encoder_pair_ckpt=None,
+        text_encoder = None,
+        text_encoder_kwargs = None,
+        text_encoder_ckpt = None,
         scheduler_name='stabilityai/stable-diffusion-2-1',
         scheduler_pred_type='epsilon',
         unet_model_config=None,
@@ -85,6 +92,8 @@ class DiffGarLDM(nn.Module):
         #change prediction type
         self.noise_scheduler.config.prediction_type = scheduler_pred_type
         self.inference_scheduler.config.prediction_type = scheduler_pred_type
+        self.max_length = self.unet_model_config['embedding_max_length']
+
 
         print(f"Diffusion model initialized with scheduler {self.noise_scheduler}")
 
@@ -98,8 +107,18 @@ class DiffGarLDM(nn.Module):
         self.encoder_pair = get_encoder_pair(encoder_pair, encoder_pair_kwargs)
         if encoder_pair_ckpt:
             self.encoder_pair.load_ckpt(encoder_pair_ckpt)
+        self.text_encoder = self.encoder_pair
+        
+        if text_encoder is not None:
+            self.text_encoder = get_text_encoder(text_encoder, text_encoder_kwargs)
+            self.text_encoder.max_length = self.max_length
+            if text_encoder_ckpt:
+                self.text_encoder.load_ckpt(text_encoder_ckpt)
+        
         if freeze_encoder_pair:
             self.freeze_encoder_pair()
+            self.freeze_text_encoder()
+            
         self.freeze_encoders = freeze_encoder_pair
         
         if unet_ckpt:
@@ -108,6 +127,8 @@ class DiffGarLDM(nn.Module):
         if freeze_unet:
             self.freeze_unet()
             
+        
+            
         self.subject_flagging = subject_flagging
         
         self.train_slider_concept = train_slider_concept
@@ -115,10 +136,8 @@ class DiffGarLDM(nn.Module):
         self.first_run = False
         
         
-        
-        
         with torch.no_grad():
-            text_dim = self.encoder_pair.get_text_embedding("test")['last_hidden_state'].shape[-1]
+            text_dim = self.text_encoder.get_text_embedding("test")['last_hidden_state'].shape[-1]
         
         print(f"Text dimension: {text_dim}")
         
@@ -136,9 +155,17 @@ class DiffGarLDM(nn.Module):
     
     @classmethod
     def from_yaml(cls, yaml_path, device=None):
-        with open(yaml_path, "r") as file:
-            config = yaml.safe_load(file)
-            config = config.get('model', config) #for loading from LightningCLI configs or nondescript yaaml files
+        
+        if 's3://' in yaml_path:
+            import s3fs
+            fs = s3fs.S3FileSystem()
+            with fs.open(yaml_path, "r") as file:
+                config = yaml.safe_load(file)
+                config = config.get('model', config)
+        else:
+            with open(yaml_path, "r") as file:
+                config = yaml.safe_load(file)
+                config = config.get('model', config) #for loading from LightningCLI configs or nondescript yaaml files
         return cls.from_config(config, device=device)
     
     @classmethod
@@ -148,9 +175,18 @@ class DiffGarLDM(nn.Module):
         else:
             model = cls.from_config(yaml_or_config, device=device)
             
-        ckpt = torch.load(ckpt_path, map_location=device)
-        model.load_state_dict(ckpt['state_dict'], strict=True)
-        print(f"Model loaded from {ckpt_path}")
+            
+        if 's3://' in ckpt_path:
+            from s3torchconnector import S3Checkpoint
+            checkpoint= S3Checkpoint(region='us-east-1')
+            with checkpoint.reader(ckpt_path) as f:
+                ckpt = torch.load(f, map_location=device)
+                model.load_state_dict(ckpt['state_dict'], strict=True)
+                print(f"Model loaded from {ckpt_path}")
+        else:
+            ckpt = torch.load(ckpt_path, map_location=device)
+            model.load_state_dict(ckpt['state_dict'], strict=True)
+            print(f"Model loaded from {ckpt_path}")
         
         return model
 
@@ -185,24 +221,17 @@ class DiffGarLDM(nn.Module):
         
         
         if self.subject_flagging:
-            offsets = self.encoder_pair.get_text_embedding(prompt,return_dict = True, return_tokenizer_only = True)['offset_mapping']
+            offsets = self.text_encoder.get_text_embedding(prompt,return_dict = True, return_tokenizer_only = True)['offset_mapping']
             prompt, subject_masks = create_binary_mask_from_list(prompt, offsets)
 
         if self.freeze_encoders:
             with torch.no_grad():
-                encoded_text_dict = self.encoder_pair.get_text_embedding(prompt, use_tensor = True, return_dict = True)
+                encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True)
         else:
-            encoded_text_dict = self.encoder_pair.get_text_embedding(prompt, use_tensor = True, return_dict = True)
+            encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True)
             
         if subject_masks is not None:
             encoded_text_dict['subject_masks'] = subject_masks
-            
-        # if self.first_run:
-        #     for key in encoded_text_dict:
-        #         try:
-        #             print(key, encoded_text_dict[key].shape)   
-        #         except:
-        #             pass
 
         return encoded_text_dict
             
@@ -223,9 +252,18 @@ class DiffGarLDM(nn.Module):
         for param in self.unet.parameters():
             param.requires_grad = True
             
+    def freeze_text_encoder(self):
+        for param in self.text_encoder.parameters():
+            param.requires_grad = False
+            
+    def unfreeze_text_encoder(self):
+        for param in self.text_encoder.parameters():
+            param.requires_grad = True
+            
     def freeze(self):
         self.freeze_encoder_pair()
         self.freeze_unet()
+        self.freeze_text_encoder()
         
         for param in self.parameters():
             param.requires_grad = False
@@ -233,6 +271,7 @@ class DiffGarLDM(nn.Module):
     def unfreeze(self):
         self.unfreeze_encoder_pair()
         self.unfreeze_unet()
+        self.unfreeze_text_encoder()
         
         for param in self.parameters():
             param.requires_grad = True
@@ -289,7 +328,6 @@ class DiffGarLDM(nn.Module):
 
         bsz, length, device = *encoder_hidden_states.shape[0:2], encoder_hidden_states.device
         
-        
         assert latents.shape == noisy_latents.shape, "Latents and noisy latents shape mismatch"
         assert latents.shape == target.shape, "Latents and target shape mismatch"
         
@@ -302,14 +340,6 @@ class DiffGarLDM(nn.Module):
             model_pred = self.unet(
                 noisy_latents, time = timesteps, embedding = encoder_hidden_states, embedding_mask_proba = guidance_scale, embedding_scale = 1.0
             )
-
-        # elif self.set_from == "pre-trained":
-        #     compressed_latents = self.group_in(noisy_latents.permute(0, 2, 3, 1).contiguous()).permute(0, 3, 1, 2).contiguous()
-        #     model_pred = self.unet(
-        #         compressed_latents, timesteps, encoder_hidden_states, 
-        #         encoder_attention_mask=boolean_encoder_mask
-        #     ).sample
-        #     model_pred = self.group_out(model_pred.permute(0, 2, 3, 1).contiguous()).permute(0, 3, 1, 2).contiguous()
 
         if self.snr_gamma is None:
             loss = F.mse_loss(model_pred.float(), target.float(), reduction="mean")
@@ -463,6 +493,9 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
                 encoder_pair='clap',
                 encoder_pair_kwargs=None,
                 encoder_pair_ckpt=None,
+                text_encoder = None,
+                text_encoder_kwargs = None,
+                text_encoder_ckpt = None,
                 scheduler_name='stabilityai/stable-diffusion-2-1',
                 scheduler_pred_type='epsilon',
                 unet_model_config=None,
@@ -484,6 +517,9 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
                     encoder_pair_kwargs=encoder_pair_kwargs,
                     encoder_pair_ckpt=encoder_pair_ckpt,
                     scheduler_name=scheduler_name,
+                    text_encoder=text_encoder,
+                    text_encoder_kwargs=text_encoder_kwargs,
+                    text_encoder_ckpt=text_encoder_ckpt,
                     scheduler_pred_type=scheduler_pred_type,
                     unet_model_config=unet_model_config,
                     unet_ckpt=unet_ckpt,
