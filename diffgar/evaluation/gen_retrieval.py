@@ -155,6 +155,11 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
     #                                   10, 1 / (preds + 1), 0.0))
 
     metrics = {f"mean_rank": 0, f"median_rank": 0}
+    
+    metrics['Recall'] = {}
+    metrics['Precision'] = {}
+    metrics['mAP'] = {}
+    
     for k in ks:
         metrics['Recall'][k] = 0
         metrics['Precision'][k] = 0

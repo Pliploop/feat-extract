@@ -1,4 +1,11 @@
 # pytorch_lightning: : 2.1.0
+
+
+#define a tiny, small, medium, large, and huge unet config
+
+
+
+
 seed_everything: 42
 trainer:
   accelerator: auto
@@ -50,12 +57,12 @@ model:
     device: cpu #just for init then sent to the right device
   encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
   unet_model_config:
-    name: small
+    name: xlarge
     dim: 1
     in_channels: 512
     out_channels: 512
     channels: [1024, 1024, 1536, 2048]
-    factors: [2, 2,4, 4]
+    factors: [2, 2, 4, 4]
     items: [1, 1, 2, 2]
     attentions: [0, 0, 1, 1]
     cross_attentions: [0, 0, 1, 1]
@@ -78,17 +85,21 @@ model:
     class_name: CosineDecayWithLinearWarmup
     init_args:
       warmup_steps: 5000
-      max_steps: 200000
+      max_steps: 100000
       base_lr: 0.0001
       final_lr: 0.0000001
 data:
   task: 'song_describer'
+  task_kwargs:
+    data_path: /opt/ml/input/data/training
+    csv_path: s3://maml-aimcdt/datasets/song-describer/data/song_describer.csv
   preextracted_features: true
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
-  root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
-  new_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+  # new_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
 log: false
 log_model: false
 ckpt_path: s3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints
