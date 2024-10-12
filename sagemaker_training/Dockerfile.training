@@ -40,7 +40,6 @@ RUN apt-get update && \
 
 
 # # Copy SageMaker training script
-COPY --chmod=777 ./sagemaker_training/train $LOCAL_DIR/
 
 
 ENV PATH="$PATH:$LOCAL_DIR"
@@ -71,6 +70,7 @@ RUN pip install --upgrade soundfile
 COPY ./diffgar $LOCAL_DIR/diffgar
 COPY ./train_ldm.py $LOCAL_DIR/train_ldm.py
 COPY ./extract_dataset.py $LOCAL_DIR/extract_dataset.py
+COPY --chmod=777 ./sagemaker_training/train $LOCAL_DIR/
 
 ## mount secrets from .secrets folder and get the wandb api key
 

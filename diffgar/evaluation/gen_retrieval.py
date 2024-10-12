@@ -156,9 +156,9 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
 
     metrics = {f"mean_rank": 0, f"median_rank": 0}
     for k in ks:
-        metrics[f"R@{k}"] = 0
-        metrics[f"P@{k}"] = 0
-        metrics[f"mAP@{k}"] = 0
+        metrics['Recall'][k] = 0
+        metrics['Precision'][k] = 0
+        metrics['mAP'][k] = 0
     
     ranks_ = []
 
@@ -183,15 +183,15 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
             relevant_in_top_k = np.sum(ranks < k)
             total_relevant = len(ground_truth_idx[i])
             
-            metrics[f"R@{k}"] += relevant_in_top_k / total_relevant  # Recall@k
-            metrics[f"P@{k}"] += relevant_in_top_k / k  # Precision@k
+            metrics['Recall'][k] += relevant_in_top_k / total_relevant  # Recall@k
+            metrics['Precision'][k] += relevant_in_top_k / k  # Precision@k
 
             # mAP@k
             precisions = [(r < k) * (1 / (r + 1)) for r in ranks]
             if len(precisions) > 0:
-                metrics[f"mAP@{k}"] += np.sum(precisions) / min(k, total_relevant)
+                metrics['mAP'][k] += np.sum(precisions) / min(k, total_relevant)
             else:
-                metrics[f"mAP@{k}"] += 0.0
+                metrics['mAP'][k] += 0.0
 
     # Average the metrics over all queries
     num_queries = query_key_sim.shape[0]
@@ -202,9 +202,10 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
     metrics['median_rank'] = np.floor(np.median(ranks_) + 1)
 
     for key in metrics.keys():
-        metrics[key] /= num_queries if key not in ['mean_rank', 'median_rank'] else 1
-
-
+        if key not in ['mean_rank', 'median_rank']:
+            for k in ks:
+                metrics[key][k] /= num_queries
+        # metrics[key] /= num_queries if key not in ['mean_rank', 'median_rank'] else 1
 
     return metrics
 
