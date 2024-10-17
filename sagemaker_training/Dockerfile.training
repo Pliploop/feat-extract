@@ -64,6 +64,8 @@ RUN pip install soxr
 RUN pip uninstall soundfile -y
 RUN pip install --upgrade soundfile
 
+RUN pip install s3torchconnector
+
 # # Install AWS CLI
 
 # # Copy project code
