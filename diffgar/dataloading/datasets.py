@@ -151,6 +151,8 @@ class TextAudioDataset(Dataset):
         device = next(model.parameters()).device
         print(f"Extracting features with {extract_method} method on {device} device") if verbose else None
         
+        model.freeze()
+        
         for i in range(len(self)):
             try:
                 item = self.__getitem__(i, return_full_audio = return_full_audio, hop = hop, verbose = verbose)
@@ -158,8 +160,8 @@ class TextAudioDataset(Dataset):
                 
                 audio = item['audio'].squeeze()
                 
-                if audio.shape[0] > 200:
-                    chunks = torch.split(audio, 200, dim=0)
+                if audio.shape[0] > 150:
+                    chunks = torch.split(audio, 150, dim=0)
                     audio_features = []
                     for chunk in chunks:
                         original_device = chunk.device
