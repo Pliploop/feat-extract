@@ -21,13 +21,14 @@ import yaml
 
 
 from diffgar.models.clap.src.laion_clap import CLAP_Module
+from diffgar.models.muleT5.muleT5 import MuleT5EncoderPair
 
 def get_encoder_pair(encoder_pair, encoder_pair_kwargs=None):
     
     if encoder_pair == "clap":
         return CLAP_Module(**encoder_pair_kwargs)
-    elif encoder_pair == "muscall":
-        return MusCALL_Module(**encoder_pair_kwargs)
+    elif encoder_pair == "muleT5":
+        return MuleT5EncoderPair(**encoder_pair_kwargs)
     
 def get_text_encoder(text_encoder, text_encoder_kwargs=None):
     if text_encoder == 'T5':
@@ -92,7 +93,7 @@ class DiffGarLDM(nn.Module):
         #change prediction type
         self.noise_scheduler.config.prediction_type = scheduler_pred_type
         self.inference_scheduler.config.prediction_type = scheduler_pred_type
-        self.max_length = self.unet_model_config['embedding_max_length']
+        self.max_length = self.unet_model_config['embedding_max_length'] if self.unet_model_config is not None else 0
 
 
         print(f"Diffusion model initialized with scheduler {self.noise_scheduler}")
@@ -107,8 +108,8 @@ class DiffGarLDM(nn.Module):
         self.encoder_pair = get_encoder_pair(encoder_pair, encoder_pair_kwargs)
         if encoder_pair_ckpt:
             self.encoder_pair.load_ckpt(encoder_pair_ckpt)
-        self.text_encoder = self.encoder_pair
         
+        self.text_encoder = None
         if text_encoder is not None:
             self.text_encoder = get_text_encoder(text_encoder, text_encoder_kwargs)
             self.text_encoder.max_length = self.max_length
@@ -137,7 +138,7 @@ class DiffGarLDM(nn.Module):
         
         
         with torch.no_grad():
-            text_dim = self.text_encoder.get_text_embedding("test")['last_hidden_state'].shape[-1]
+            text_dim = self.text_encoder.get_text_embedding("test")['last_hidden_state'].shape[-1] if self.text_encoder is not None else self.encoder_pair.get_text_embedding("test")['last_hidden_state'].shape[-1]
         
         print(f"Text dimension: {text_dim}")
         
@@ -221,14 +222,14 @@ class DiffGarLDM(nn.Module):
         
         
         if self.subject_flagging:
-            offsets = self.text_encoder.get_text_embedding(prompt,return_dict = True, return_tokenizer_only = True)['offset_mapping']
+            offsets = self.text_encoder.get_text_embedding(prompt,return_dict = True, return_tokenizer_only = True)['offset_mapping'] if self.text_encoder is not None else self.encoder_pair.get_text_embedding(prompt, return_dict = True, return_tokenizer_only = True)['offset_mapping']
             prompt, subject_masks = create_binary_mask_from_list(prompt, offsets)
 
         if self.freeze_encoders:
             with torch.no_grad():
-                encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True)
+                encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True) if self.text_encoder is not None else self.encoder_pair.get_text_embedding(prompt, use_tensor = True, return_dict = True)
         else:
-            encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True)
+            encoded_text_dict = self.text_encoder.get_text_embedding(prompt, use_tensor = True, return_dict = True) if self.text_encoder is not None else self.encoder_pair.get_text_embedding(prompt, use_tensor = True, return_dict = True)
             
         if subject_masks is not None:
             encoded_text_dict['subject_masks'] = subject_masks
@@ -253,12 +254,14 @@ class DiffGarLDM(nn.Module):
             param.requires_grad = True
             
     def freeze_text_encoder(self):
-        for param in self.text_encoder.parameters():
-            param.requires_grad = False
+        if self.text_encoder is not None:
+            for param in self.text_encoder.parameters():
+                param.requires_grad = False
             
     def unfreeze_text_encoder(self):
-        for param in self.text_encoder.parameters():
-            param.requires_grad = True
+        if self.text_encoder is not None:
+            for param in self.text_encoder.parameters():
+                param.requires_grad = True
             
     def freeze(self):
         self.freeze_encoder_pair()
@@ -409,10 +412,13 @@ class DiffGarLDM(nn.Module):
         num_warmup_steps = len(timesteps) - num_steps * inference_scheduler.order
         progress_bar = tqdm(range(num_steps), disable=disable_progress)
         
-        if self.unet_model_config['infer_classifier_free_guidance_strength'] is not None:
+        # if self.unet_model_config['infer_classifier_free_guidance_strength'] is not None:
+        #     guidance_scale = self.unet_model_config['infer_classifier_free_guidance_strength']
+        # else:
+        #     guidance_scale = guidance_scale
+            
+        if guidance_scale is None:
             guidance_scale = self.unet_model_config['infer_classifier_free_guidance_strength']
-        else:
-            guidance_scale = guidance_scale
 
         for i, t in enumerate(timesteps):
             # expand the latents if we are doing classifier free guidance
@@ -453,7 +459,6 @@ class DiffGarLDM(nn.Module):
 
     def encode_text_classifier_free(self, prompt, num_samples_per_prompt):
         device = next(self.parameters()).device
-        
         
         # get tex embeddings for classifier free guidance
         encoded_text_dict = self.encode_text(prompt)

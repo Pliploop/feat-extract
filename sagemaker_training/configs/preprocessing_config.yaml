@@ -12,6 +12,7 @@ processing_outputs:
 processor:
   image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/diffgar/training:latest
   instance_count: 10
+  role: maml-aimcdt-sagemaker
   instance_type: ml.g5.xlarge
   volume_size_in_gb: 200
   entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/storage/julien/DiffGAR/training_configs/preprocessing_config.yaml]

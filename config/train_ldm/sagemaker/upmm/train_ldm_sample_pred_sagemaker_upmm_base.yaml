@@ -44,6 +44,9 @@ model:
   encoder_pair: clap
   scheduler_name: cvssp/audioldm2
   scheduler_pred_type: sample
+  text_encoder: T5
+  text_encoder_kwargs:
+    model_name: google/flan-t5-base
   encoder_pair_kwargs:
     enable_fusion: false
     amodel: HTSAT-base

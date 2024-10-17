@@ -48,7 +48,6 @@ model:
     enable_fusion: false
     amodel: HTSAT-base
     device: cpu #just for init then sent to the right device
-  encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
   preextracted_latents: true
 data:
   task: 'song_describer'
@@ -58,7 +57,7 @@ data:
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
-save_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+save_dir: /import/research_c4dm/jpmg86/song-describer/data/npy/1hz
 root_path: /import/research_c4dm/jpmg86/song-describer/data/audio
 extract_method: get_audio_embedding_from_data
 out_key: embedding_proj

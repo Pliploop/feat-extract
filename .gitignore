@@ -26,7 +26,6 @@ share/python-wheels/
 *.egg
 MANIFEST
 
-config.yaml
 /homes/jpmg86/Diff-GAR/diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt
 data/*
 
@@ -38,7 +37,6 @@ data/*
 
 esc50/*
 wandb/*
-config.yaml
 
 *.ipynb
 *.pt

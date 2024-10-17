@@ -41,7 +41,7 @@ class EstimatorConfig:
     tags: list[dict]
     volume_size: int = 100  # in GB, ignored with some instance_types because they come with predetermined size
     max_run: int = 5 * 24 * 60 * 60  # job timeout in seconds, corresponds to 5 days, the maximum available
-    role: str = "maml-sagemaker"
+    role: str = ""
     enable_sagemaker_metrics: bool = True
 
     def __post_init__(self):

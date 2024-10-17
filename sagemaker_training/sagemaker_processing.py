@@ -36,7 +36,7 @@ class ProcessorConfig:
     tags: list[dict]
     entrypoint: list[str]
     max_runtime_in_seconds: int = 5 * 24 * 60 * 60  # corresponds to 5 days
-    role: str = "maml-sagemaker"
+    role: str = ""
 
 
 def launch_sagemaker_processing(cfg: dict):
