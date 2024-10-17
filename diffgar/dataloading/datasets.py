@@ -160,8 +160,8 @@ class TextAudioDataset(Dataset):
                 
                 audio = item['audio'].squeeze()
                 
-                if audio.shape[0] > 150:
-                    chunks = torch.split(audio, 150, dim=0)
+                if audio.shape[0] > 100:
+                    chunks = torch.split(audio, 100, dim=0)
                     audio_features = []
                     for chunk in chunks:
                         original_device = chunk.device
