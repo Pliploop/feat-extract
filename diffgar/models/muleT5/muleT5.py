@@ -331,4 +331,19 @@ class MuleT5EncoderPair(nn.Module):
     def extract_features(self, data):
         return self.get_audio_embedding_from_data(data)
     
+    def freeze(self):
+        for param in self.text_encoder.parameters():
+            param.requires_grad = False
+            
+        for param in self.audio_encoder.parameters():
+            param.requires_grad = False
+
+    def unfreeze(self):
+        for param in self.text_encoder.parameters():
+            param.requires_grad = True
+            
+        for param in self.audio_encoder.parameters():
+            param.requires_grad = True
+            
+    
     
