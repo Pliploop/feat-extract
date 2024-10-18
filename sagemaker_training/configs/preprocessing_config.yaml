@@ -13,7 +13,7 @@ processing_outputs:
     source: /opt/ml/processing/output
 processor:
   image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/diffgar/training:latest
-  instance_count: 5
+  instance_count: 10
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.xlarge
   volume_size_in_gb: 200

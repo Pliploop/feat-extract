@@ -238,7 +238,9 @@ class TextAudioDataset(Dataset):
                     if os.path.exists(save_path):
                         os.remove(save_path)
                     np.save(save_path, audio_features.detach().cpu().numpy())
-                
+            
+            if not save and audio_features is not None:
+                pbar.set_description(f"{file_path}, shape: {audio_features.shape}")
                 
                 
             audio_features_all.append(audio_features.detach().cpu()) if audio_features is not None else None
