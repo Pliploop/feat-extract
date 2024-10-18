@@ -151,6 +151,8 @@ class TextAudioDataset(Dataset):
         device = next(model.parameters()).device
         print(f"Extracting features with {extract_method} method on {device} device") if verbose else None
         
+        
+        
         model.freeze()
         
         for i in range(len(self)):
@@ -158,16 +160,15 @@ class TextAudioDataset(Dataset):
                 item = self.__getitem__(i, return_full_audio = return_full_audio, hop = hop, verbose = verbose)
                 file_path = self.annotations[i]['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
                 
-                audio = item['audio'].squeeze()
+                audio = item['audio'].squeeze().to(device)
                 
                 if audio.shape[0] > 100:
                     chunks = torch.split(audio, 100, dim=0)
+                    chunks = list(chunks)
                     audio_features = []
                     for chunk in chunks:
-                        original_device = chunk.device
-                        chunk.to(device)
-                        audio_features.append(getattr(model, extract_method)(chunk, **extract_kwargs)[out_key])
-                        chunk.to(original_device)
+                        feat = getattr(model, extract_method)(chunk, **extract_kwargs)[out_key]
+                        audio_features.append(feat)
                     audio_features = torch.cat(audio_features, dim=0)
                 else:
                     audio_features = getattr(model, extract_method)(audio.to(device), **extract_kwargs)[out_key]
@@ -178,7 +179,7 @@ class TextAudioDataset(Dataset):
                 
                 yield audio_features, file_path
             except Exception as e:
-                print(f"Error extracting features for {file_path}: {e}") if verbose else None
+                print(f"Error extracting features for {file_path}: {e}")
                 yield None, ''
         
     def extract_and_save_features(self, model, save_dir = None, extract_method = 'extract_features', extract_kwargs = {}, out_key = 'embedding', hop = None, return_full_audio = True, limit_n = None, save = False, verbose = True, root_path = None):
@@ -241,7 +242,7 @@ class TextAudioDataset(Dataset):
             
             if not save and audio_features is not None:
                 pbar.set_description(f"{file_path}, shape: {audio_features.shape}")
-                
+                pass
                 
             audio_features_all.append(audio_features.detach().cpu()) if audio_features is not None else None
             

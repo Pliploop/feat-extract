@@ -59,7 +59,7 @@ data:
   target_n_samples: 47999
 save_dir: /import/research_c4dm/jpmg86/song-describer/data/mule/npy/1hz
 root_path: /import/research_c4dm/jpmg86/song-describer/data/audio
-extract_method: get_audio_embedding_from_data
+extract_method: extract_features
 out_key: embeddings
 hop: 16000
 limit_n: null

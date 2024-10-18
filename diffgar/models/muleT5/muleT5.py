@@ -226,6 +226,7 @@ class NFNet(nn.Module):
 
 
         self.frontend = frontend if frontend is not None else Melgram.from_config(default_config)
+        
         self.embed_dim = 1728
         
     @classmethod
@@ -274,19 +275,20 @@ class NFNet(nn.Module):
 
     def forward(self, x):
         
+    
+        
         if isinstance(x, dict):
             wav = x['audio']
         else:
             wav = x
         
-        
-        
+        if len(wav.shape) == 2: ## batch, time
+            wav = wav.unsqueeze(1)
+          
         spec = self.frontend(wav) if self.frontend is not None else wav
         
-        # if batch, x, y, add channels
-        if len(spec.shape) == 3:
-            spec = spec.unsqueeze(1)
-         
+        
+        
         slow = self.slow_stem(spec)
         fast = self.fast_stem(spec)
 
