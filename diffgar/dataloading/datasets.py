@@ -179,7 +179,7 @@ class TextAudioDataset(Dataset):
                 
                 yield audio_features, file_path
             except Exception as e:
-                print(f"Error extracting features for {file_path}: {e}")
+                print(f"Error extracting features: {e}")
                 yield None, ''
         
     def extract_and_save_features(self, model, save_dir = None, extract_method = 'extract_features', extract_kwargs = {}, out_key = 'embedding', hop = None, return_full_audio = True, limit_n = None, save = False, verbose = True, root_path = None):
