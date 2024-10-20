@@ -1,4 +1,11 @@
 # pytorch_lightning: : 2.1.0
+
+
+#define a tiny, small, medium, large, and huge unet config
+
+
+
+
 seed_everything: 42
 trainer:
   accelerator: auto
@@ -46,22 +53,52 @@ model:
   scheduler_pred_type: sample
   encoder_pair_kwargs:
     audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/vital-resonance-107/checkpoint-step=200000-recent.ckpt
+  unet_model_config:
+    name: base
+    dim: 1
+    in_channels: 1728
+    out_channels: 1728
+    channels: [512, 512, 1024, 1024]
+    factors: [2, 2,4, 4]
+    items: [1, 1, 1, 1]
+    attentions: [0, 0, 1, 1]
+    cross_attentions: [0, 0, 1, 1]
+    attention_features: 768
+    attention_heads: 8
+    embedding_features: 768
+    use_classifier_free_guidance: True
+    embedding_max_length: 77
+    resnet_groups :  1
+    classifier_free_guidance_strength: .1 # for training, masking (higher = more masking)
+    infer_classifier_free_guidance_strength: 3 # for inference, interpolation
   preextracted_latents: true
+  optimizer: 
+    class_path: torch.optim.AdamW
+    init_args:
+      lr: 0.0001
+      weight_decay: 0.00001
+      betas: [0.9, 0.999]
+  scheduler:
+    class_name: CosineDecayWithLinearWarmup
+    init_args:
+      warmup_steps: 5000
+      max_steps: 100000
+      base_lr: 0.0001
+      final_lr: 0.0000001
 data:
   task: 'song_describer'
   task_kwargs:
-    data_path: /opt/ml/processing/input
+    data_path: /opt/ml/input/data/training
     csv_path: s3://maml-aimcdt/datasets/song-describer/data/song_describer.csv
-  preextracted_features: false
+  preextracted_features: true
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
-  target_sr: 16000
-  target_n_samples: 47999
-save_dir: /opt/ml/processing/output/mule/npy/1hz
-root_path: /opt/ml/processing/input
-extract_method: get_audio_embedding_from_data
-out_key: embeddings
-hop: 16000
-limit_n: null
-save: false
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+  # new_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+log: false
+log_model: false
+ckpt_path: s3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints
+resume_id: null
+resume_from_checkpoint: null

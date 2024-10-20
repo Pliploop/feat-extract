@@ -65,5 +65,5 @@ extract_method: get_audio_embedding_from_data
 out_key: embedding_proj
 hop: 48000
 limit_n: null
-save: true
+save: false
 
