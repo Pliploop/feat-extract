@@ -346,6 +346,4 @@ class MuleT5EncoderPair(nn.Module):
             
         for param in self.audio_encoder.parameters():
             param.requires_grad = True
-            
-    
     

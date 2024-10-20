@@ -594,14 +594,30 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
             
             
             
-            print(f"Computing CLAP score") if self.first_run else None
-            gt_clap = self.encoder_pair.get_clap_score(latents, prompt, latents = True)['CLAP_Score']
-            print(f"Ground truth CLAP score: {gt_clap}") if self.first_run else None
-            print(f"Computing CLAP score for generated samples") if self.first_run else None
-            pred_clap = self.encoder_pair.get_clap_score(preds, prompt, latents = True)['CLAP_Score']
-            print(f"Generated CLAP score: {pred_clap}") if self.first_run else None
-            self.log('gt_clap', gt_clap, on_step=True, on_epoch=True, prog_bar=True)
-            self.log('pred_clap', pred_clap, on_step=True, on_epoch=True, prog_bar=True)
+            try: 
+                gt_clap = self.encoder_pair.get_clap_score(latents, prompt, latents = True)['CLAP_Score']
+                pred_clap = self.encoder_pair.get_clap_score(preds, prompt, latents = True)['CLAP_Score']
+                print(f"Computing CLAP score") if self.first_run else None
+                print(f"Ground truth CLAP score: {gt_clap}") if self.first_run else None
+                print(f"Computing CLAP score for generated samples") if self.first_run else None
+                print(f"Generated CLAP score: {pred_clap}") if self.first_run else None
+                self.log('gt_clap', gt_clap, on_step=True, on_epoch=True, prog_bar=True)
+                self.log('pred_clap', pred_clap, on_step=True, on_epoch=True, prog_bar=True)
+            
+            except:
+                
+                pass
+            
+            audio_to_audio_sims = preds.mean(dim=1) @ latents.mean(dim=1).t()
+            audio_to_audio_sims = audio_to_audio_sims.diag().mean()
+            
+            self.log('A2A_CLAP', audio_to_audio_sims, on_step=True, on_epoch=True, prog_bar=True)
+                
+            
+            
+            
+            
+            
             
             # raise ValueError("Stopping after generating samples")
             
