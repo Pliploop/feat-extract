@@ -24,13 +24,42 @@ def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
         if run.name == experiment_name:
             config = run.config
 
+    training_encoder_pair = config['model']['encoder_pair']
+    
+    encoder_pair_to_new_dir = {
+        'song_describer': {
+        'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/mule/npy/1hz',
+        'clap':    '/import/research_c4dm/jpmg86/song-describer/data/npy'
+        }
+    }
+    
+    encoder_pair_to_old_dir = {
+        'song_describer': {
+        'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/audio',
+        'clap':    '/import/research_c4dm/jpmg86/song-describer/data/audio'
+        }
+    }
+
 
 
     model = DiffGarLDM.from_pretrained(config_path, ckpt_path, device=device)
 
-    latent_dm = TextAudioDataModule(task=task, batch_size=2, target_n_samples=480000, preextracted_features=True, target_sr=48000, truncate_preextracted=64)
+    latent_dm = TextAudioDataModule(
+        task=task,
+        batch_size=2,
+        target_n_samples=480000,
+        preextracted_features=True,
+        target_sr=48000,
+        truncate_preextracted=64,
+        new_dir=encoder_pair_to_new_dir[task][training_encoder_pair],
+        root_dir=encoder_pair_to_old_dir[task][training_encoder_pair]
+        )
     latent_dm.setup(None)
-    dataset = latent_dm.val_dataset
+    
+    if task=='song_describer':
+        dataset = latent_dm.val_dataset
+    else:
+        dataset = latent_dm.test_dataset #might need to modify musiccaps so that it is all in the test set
 
     return model, dataset, experiment_name, config
 
@@ -72,10 +101,10 @@ def run_eval(guidance_scales, model_names, task, log=True, device='cuda:4'):
                         for k in ks:
                             new_dict = {}
                             for metric, values in retrieval_metrics.items():
-                                if isinstance(values, dict):
+                                if isinstance(values, dict) and values[k] is not None:
                                     new_dict[metric] = round(values[k], 2)
                                 else:
-                                    new_dict[metric] = round(values, 2)
+                                    new_dict[metric] = round(values, 2) if values is not None else None
                             
                             
                             config.update({
@@ -98,50 +127,147 @@ def run_eval(guidance_scales, model_names, task, log=True, device='cuda:4'):
         
 
 if __name__ == '__main__':
-    guidance_scales = [0,0.1,0.3,0.5,1,5,10]
-    # guidance_scales = [3]
-    model_names = [
-        # base experiments
-        'diffgar-training-2024-10-12-00-59-43-7lnzqj-ip-10-2-239-154.ec2.internal', #upmm, guidance 0.1, base, T5, clap
-        'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal', #songdescriber, guidance 0.1, base, T5, clap
-        'diffgar-training-2024-10-09-15-32-35-9ngrhp-ip-10-0-73-91.ec2.internal', #upmm, guidance 0.1, base, clap, clap
-        'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal', #songdescriber, guidance 0.1, base, clap, clap
-        # model scale experiments
-        # upmm
-        # 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal', #upmm, guidance 0.1, xlarge, clap, clap
-        # 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal', #upmm, guidance 0.1, large, clap, clap
-        # 'diffgar-training-2024-10-09-15-17-25-8sarg2-ip-10-0-206-118.ec2.internal', #upmm, guidance 0.1, small, clap, clap
-        # 'diffgar-training-2024-10-09-16-00-15-1y2807-ip-10-2-224-244.ec2.internal', #upmm, guidance 0.1, tiny, clap, clap
-        # '', #upmm, guidance 0.1, xlarge, T5, clap
-        # '', #upmm, guidance 0.1, large, T5, clap
-        # '', #upmm, guidance 0.1, base, T5, clap
-        # '', #upmm, guidance 0.1, small, T5, clap
-        # '', #upmm, guidance 0.1, tiny, T5, clap
-        # song describer
-        # 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal', #songdescriber, guidance 0.1, xlarge, clap, clap
-        # 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal', #songdescriber, guidance 0.1, large, clap, clap
-        # 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal', #songdescriber, guidance 0.1, small, clap, clap
-        # 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal', #songdescriber, guidance 0.1, tiny, clap, clap
-        # '', #songdescriber, guidance 0.1, xlarge, T5, clap
-        # '', #songdescriber, guidance 0.1, large, T5, clap
-        # '', #songdescriber, guidance 0.1, base, T5, clap
-        # '', #songdescriber, guidance 0.1, small, T5, clap
-        # '', #songdescriber, guidance 0.1, tiny, T5, clap
-        
-        # # guidance experiments, songdescriber or upmm, various guidance scales in [0,0.1,0.3,0.5,1], base, clap, clap
-        # '', #upmm, guidance 0.1, base, clap, clap
-        # '', #upmm, guidance 0.3, base, clap, clap
-        # '', #upmm, guidance 0.5, base, clap, clap
-        # '', #upmm, guidance 1, base, clap, clap
-        # '', #songdescriber, guidance 0.1, base, clap, clap
-        # '', #songdescriber, guidance 0.3, base, clap, clap
-        # '', #songdescriber, guidance 0.5, base, clap, clap
-        # '', #songdescriber, guidance 1, base, clap, clap
-        
-        # number of steps but this is for later
-        
-        
-    ]
-    task = 'song_describer'
+    # guidance_scales = [0,0.1,0.3,0.5,1,5,10]
+    guidance_scales = [3]
     
-    run_eval(guidance_scales, model_names, task, log=True, device='cuda:0')
+    experiments = {
+        'base' : {
+            'task' : {
+                'upmm' : {
+                    # 'CLAPT5' : {'model_name' : 'diffgar-training-2024-10-12-00-59-43-7lnzqj-ip-10-2-239-154.ec2.internal'},
+                    # 'CLAPCLAP' : {'model_name' : 'diffgar-training-2024-10-09-15-32-35-9ngrhp-ip-10-0-73-91.ec2.internal'},
+                    # 'MULET5' : '',
+                },
+                'song_describer' : {
+                    # 'CLAPT5' : {'model_name' : 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
+                    # 'CLAPCLAP' : {'model_name' : 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
+                    # 'MULET5' : {'model_name' : 'diffgar-training-2024-10-20-09-21-57-iv6e5u-ip-10-0-109-23.ec2.internal'}
+                }
+            }
+        },
+        'model_scale' : {
+            'task' : {
+                'upmm' : {
+                    'CLAPT5' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        # 'base' : {'model_name' : 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal'},
+                        # 'small' : '',
+                        # 'tiny' : '',
+                    },
+                    'CLAPCLAP' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        # 'base' : {'model_name' : 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal'},
+                        # 'small' : '',
+                        # 'tiny' : '',
+                    },
+                    'MULET5' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        'base' : {'model_name':'diffgar-training-2024-10-21-13-00-40-7w1jx7-ip-10-2-86-220.ec2.internal'},
+                        # 'small' : {'model_name':'diffgar-training-2024-10-20-13-34-10-xnyaqm-ip-10-2-81-46.ec2.internal'},
+                        # 'tiny' : {'model_name':'diffgar-training-2024-10-20-12-07-59-ikd551-ip-10-0-110-34.ec2.internal'},
+                    },
+                },
+                'song_describer' : {
+                    'CLAPT5' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        # 'base' : {'model_name' : 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal'},
+                        # 'small' : '',
+                        # 'tiny' : '',
+                    },
+                    'CLAPCLAP' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        # 'base' : {'model_name' : 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal'},
+                        # 'small' : '',
+                        # 'tiny' : '',
+                    },
+                    'MULET5' : {
+                        # 'xlarge' : '',
+                        # 'large' : '',
+                        # 'base' : {'model_name':'diffgar-training-2024-10-20-09-21-57-iv6e5u-ip-10-0-109-23.ec2.internal'},
+                        # 'small' : {'model_name':'diffgar-training-2024-10-20-10-04-37-nf0eca-ip-10-2-89-112.ec2.internal'},
+                        # 'tiny' : {'model_name':'diffgar-training-2024-10-20-09-54-08-r9wzby-ip-10-0-199-175.ec2.internal'},
+                    },
+                },
+            },
+        },
+        # 'guidance' : {
+        #     'task' : {
+        #         'upmm' : {
+        #             'CLAPT5' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #             'CLAPCLAP' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #             'MULET5' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #         },
+        #         'song_describer' : {
+        #             'CLAPT5' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #             'CLAPCLAP' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #             'MULET5' : {
+        #                 '0' : '',
+        #                 '0.1' : '',
+        #                 '0.3' : '',
+        #                 '0.5' : '',
+        #                 '1' : '',
+        #             },
+        #         },
+        #     },
+        # },
+    }
+    
+    tasks = [
+        'song_describer',
+        # 'musiccaps'
+        ]
+    
+    #get all the experiments from the dict and build a model_names list
+    
+    def get_models_to_run(dict_):
+        model_names = []
+        for key, value in dict_.items():
+            if key == 'model_name':
+                model_names.append(value)
+                
+            elif isinstance(value, dict):
+                model_names.extend(get_models_to_run(value))
+                
+        return model_names
+    
+    model_names = get_models_to_run(experiments)
+    
+    print(model_names)
+    
+    for task in tasks:
+        run_eval(guidance_scales, model_names, task, log=False, device='cuda:7')

@@ -248,26 +248,27 @@ class NFNet(nn.Module):
             state_dict = torch.load(ckpt_path, map_location=device)['state_dict']
             print(f"Model loaded from {ckpt_path}")
         
+        print(state_dict)
         
         try:
             model.load_state_dict(state_dict)
+            print("Loaded full state dict")
         except:
             print("Could not load state dict, trying to load only ['encoder'] keys")
             
-        try:
-            from collections import OrderedDict
-            # new ordered dict
-            new_state_dict = OrderedDict()
-            for k in list(state_dict.keys()):
-                if 'encoder' in k:
-                    new_key = k.replace('encoder.','')
-                    new_state_dict[new_key] = state_dict[k]
-                    
-            model.load_state_dict(new_state_dict)
-            print("Loaded only encoder keys")
-            
-        except Exception as e:
-            print(f"Could not load state dict, error: {e}")
+            try:
+                from collections import OrderedDict
+                new_state_dict = OrderedDict()
+                for k in list(state_dict.keys()):
+                    if 'encoder' in k:
+                        new_key = k.replace('encoder.','')
+                        new_state_dict[new_key] = state_dict[k]
+                        
+                model.load_state_dict(new_state_dict)
+                print("Loaded only encoder keys")
+                
+            except Exception as e:
+                print(f"Could not load state dict, error: {e}")
             
         model.frontend = frontend
         
@@ -313,7 +314,128 @@ class NFNet(nn.Module):
         return {
             'embeddings': out
         }
-
+        
+        
+        
+class MULE(nn.Module):
+    
+    def __init__(self,
+                 encoder = NFNet(),
+                 head_dims = [[1728,1728,512]],
+                 temperature = 0.1,
+                 feat_extract_head = 0,
+                 plusplus = False,
+                 **kwargs):
+        super(MULE,self).__init__()
+        
+        
+        self.encoder = encoder
+        
+        self.head_dims = head_dims
+        self.encoder_dim = self.encoder.embed_dim if encoder else None
+        self.heads = []
+        self.plusplus = plusplus
+        # if plusplus, the last block of the encoder is parallelized and each heads' input is the output of a different block
+        
+        for dim in head_dims:
+            head = []
+            last_dim = self.encoder_dim
+            for d in dim:
+                head.append(nn.Linear(last_dim,d,bias = False))
+                head.append(nn.ReLU())
+                last_dim = d
+            self.heads.append(nn.Sequential(*head))
+            
+        self.heads = nn.ModuleList(self.heads)
+        self.temperature = temperature
+        self.feat_extract_head = feat_extract_head
+        
+        if isinstance(self.feat_extract_head, list):
+            self.embed_dim = self.encoder_dim * len(self.feat_extract_head)
+            
+        else:
+            if self.feat_extract_head == -2:
+                self.embed_dim = sum([dim[-1] for dim in self.head_dims])
+            elif self.feat_extract_head == -1:
+                if not self.plusplus:
+                    self.embed_dim = self.encoder_dim
+                else:
+                    self.embed_dim = self.encoder_dim * len(self.heads)
+            elif self.feat_extract_head >= 0:
+                self.embed_dim = self.head_dims[self.feat_extract_head]
+        
+        
+        print(f'Embedding dimension: {self.embed_dim}')
+        #spwn one loss per head
+        
+        
+    def forward(self,x):
+        
+        if isinstance(x, dict):
+            wav = x['audio']
+        else:
+            wav = x
+                
+        encoded = self.encoder(wav)
+        
+        if self.plusplus:
+            projected = [head(encoded[i,...]) for i,head in enumerate(self.heads)]
+        else:    
+            projected = [head(encoded) for head in self.heads]
+        
+        return {
+            'projected':projected,
+            'encoded':encoded,
+            "wav":wav,
+        }
+        
+    @torch.no_grad()
+    def extract_features(self, x):
+        out = self.forward(x)
+        
+        
+        
+        
+        out['projected_normalized'] = [F.normalize(p, dim=-1) for p in out['projected']]
+        
+        # extract 0th head by default
+        
+        
+        return {
+            'embeddings': out['encoded'],
+            'projected': out['projected'][0],
+            'projected_normalized': out['projected_normalized'][0]
+        }
+        
+    @classmethod
+    def from_pretrained(cls, ckpt_path, device = 'cpu'):
+        
+        model = cls()
+        
+        frontend = model.encoder.frontend
+        model.encoder.frontend = None
+        
+        if 's3://' in ckpt_path:
+            from s3torchconnector import S3Checkpoint
+            checkpoint= S3Checkpoint(region='us-east-1')
+            with checkpoint.reader(ckpt_path) as f:
+                state_dict = torch.load(f, map_location=device)['state_dict']
+                print(f"Model loaded from {ckpt_path}")
+        else:
+            state_dict = torch.load(ckpt_path, map_location=device)['state_dict']
+            print(f"Model loaded from {ckpt_path}")
+        
+        
+        try:
+            model.load_state_dict(state_dict)
+            print("Loaded full state dict")
+            
+        except Exception as e:
+            print(e) 
+        
+        model.encoder.frontend = frontend
+        
+        return model
  
 from ..ldm.text_encoders import T5TextEncoder
  
@@ -322,7 +444,7 @@ class MuleT5EncoderPair(nn.Module):
     def __init__(self, text_encoder ='google-t5/t5-base', audio_encoder_ckpt = None):
         super(MuleT5EncoderPair, self).__init__()
         self.text_encoder = T5TextEncoder(model_name=text_encoder)
-        self.audio_encoder = NFNet.from_pretrained(audio_encoder_ckpt) if audio_encoder_ckpt is not None else NFNet()
+        self.audio_encoder = MULE.from_pretrained(audio_encoder_ckpt) if audio_encoder_ckpt is not None else MULE()
         
     def get_text_embedding(self, prompts, **kwargs):
         return self.text_encoder.get_text_embedding(prompts, **kwargs)

@@ -20,8 +20,7 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
     audio = datum.get('audio', None)
 
     text_embeds = model.encoder_pair.get_text_embedding(prompt)
-    audio = audio if preextracted_features else model.encoder_pair.get_audio_embeddings_from_data(
-        audio)
+    audio = audio if preextracted_features else model.encoder_pair.get_audio_embedding_from_data(audio)
 
     audio = torch.stack(audio) if isinstance(audio, list) else audio
 
@@ -48,35 +47,36 @@ def compute_sims(text_embeds, audio_embeds, preds):
     
     audio_embeds = audio_embeds.mean(dim=1)
     preds = preds.mean(dim=1)
-
-    retrieve_gt_audio_from_gt_text = text_embeds @ audio_embeds.t()
-    retrieve_gt_text_from_gt_audio = audio_embeds @ text_embeds.t()
     
-    retrieve_gt_text_from_pred_audio = preds @ text_embeds.t()
-    retrieve_gt_audio_from_pred_text = preds @ audio_embeds.t()
+    
+    # if the embedding dimensions are the same for text embeds and audio embeds, we can compute the similarities directly
 
-    print(f"retrieve_gt_audio_from_gt_text: {retrieve_gt_audio_from_gt_text.shape}")
-    print(f"retrieve_gt_text_from_gt_audio: {retrieve_gt_text_from_gt_audio.shape}")
-    print(f"retrieve_gt_text_from_pred_audio: {retrieve_gt_text_from_pred_audio.shape}")
+
+    retrieve_gt_text_from_gt_audio = None
+    retrieve_gt_audio_from_gt_text = None
+    retrieve_gt_text_from_pred_audio = None
+
+    if text_embeds.shape[-1] == audio_embeds.shape[-1]:
+
+        retrieve_gt_audio_from_gt_text = text_embeds @ audio_embeds.t()
+        retrieve_gt_text_from_gt_audio = audio_embeds @ text_embeds.t()
+        retrieve_gt_text_from_pred_audio = preds @ text_embeds.t()
+        
+        
+            
+        print(f"retrieve_gt_audio_from_gt_text: {retrieve_gt_audio_from_gt_text.shape}")
+        print(f"retrieve_gt_text_from_gt_audio: {retrieve_gt_text_from_gt_audio.shape}")
+        print(f"retrieve_gt_text_from_pred_audio: {retrieve_gt_text_from_pred_audio.shape}")
+    
+    retrieve_gt_audio_from_pred_text = preds @ audio_embeds.t()
+    #instead of dot-product, we can use cosine similarity
+    
+    # retrieve_gt_audio_from_pred_text = audio_embeds @ audio_embeds.t()
+
+    
     print(f"retrieve_gt_audio_from_pred_text: {retrieve_gt_audio_from_pred_text.shape}")
 
 
-    # gt_text_audio_sims_avg = gt_text_audio_sims.mean(dim=1)
-    # gt_text_audio_sims_max = gt_text_audio_sims.max(dim=1).values
-    # pred_audio_gt_text_sims_avg = pred_audio_gt_text_sims.mean(dim=1)
-    # pred_audio_gt_text_sims_max = pred_audio_gt_text_sims.max(dim=1).values
-    # pred_audio_gt_audio_sims_avg = pred_audio_gt_audio_sims.mean(-1).mean(-1)
-    # pred_audio_gt_audio_sims_max = pred_audio_gt_audio_sims.max(
-    #     -1).values.max(-1).values
-
-    # out_ = {
-    #     'gt_text_audio_sims_avg': gt_text_audio_sims_avg,
-    #     'gt_text_audio_sims_max': gt_text_audio_sims_max,
-    #     'pred_audio_gt_text_sims_avg': pred_audio_gt_text_sims_avg,
-    #     'pred_audio_gt_text_sims_max': pred_audio_gt_text_sims_max,
-    #     'pred_audio_gt_audio_sims_avg': pred_audio_gt_audio_sims_avg,
-    #     'pred_audio_gt_audio_sims_max': pred_audio_gt_audio_sims_max
-    # }
     
     out_ = {
         'retrieve_gt_text_from_gt_audio': retrieve_gt_text_from_gt_audio,
@@ -86,7 +86,7 @@ def compute_sims(text_embeds, audio_embeds, preds):
     }
 
     for k, v in out_.items():
-        print(f"{k}: {v.shape}")
+        print(f"{k}: {v.shape}") if v is not None else None
 
     return out_
 
@@ -118,12 +118,10 @@ def compute_clap_score(sims_dict):
     #     pred_audio_gt_audio_sims_max)
     
     
-    retrieve_gt_text_from_gt_audio_diag = torch.diag(retrieve_gt_text_from_gt_audio)
-    retrieve_gt_audio_from_gt_text_diag = torch.diag(retrieve_gt_audio_from_gt_text)
-    retrieve_gt_text_from_pred_audio_diag = torch.diag(retrieve_gt_text_from_pred_audio)
-    retrieve_gt_audio_from_pred_text_diag = torch.diag(retrieve_gt_audio_from_pred_text)
-    
-    
+    retrieve_gt_text_from_gt_audio_diag = torch.diag(retrieve_gt_text_from_gt_audio) if retrieve_gt_text_from_gt_audio is not None else None
+    retrieve_gt_audio_from_gt_text_diag = torch.diag(retrieve_gt_audio_from_gt_text) if retrieve_gt_audio_from_gt_text is not None else None
+    retrieve_gt_text_from_pred_audio_diag = torch.diag(retrieve_gt_text_from_pred_audio) if retrieve_gt_text_from_pred_audio is not None else None
+    retrieve_gt_audio_from_pred_text_diag = torch.diag(retrieve_gt_audio_from_pred_text) if retrieve_gt_audio_from_pred_text is not None else None
     
 
     # clap_score = {
@@ -147,23 +145,20 @@ def compute_clap_score(sims_dict):
     
     clap_score = {
         'diagonals': {
-            'retrieve_gt_text_from_gt_audio_CLAP': retrieve_gt_text_from_gt_audio_diag.mean().item(),
-            'retrieve_gt_audio_from_gt_text_CLAP': retrieve_gt_audio_from_gt_text_diag.mean().item(),
-            'retrieve_gt_text_from_pred_audio_CLAP': retrieve_gt_text_from_pred_audio_diag.mean().item(),
-            'retrieve_gt_audio_from_pred_text_CLAP': retrieve_gt_audio_from_pred_text_diag.mean().item()
+            'retrieve_gt_text_from_gt_audio_CLAP': retrieve_gt_text_from_gt_audio_diag.mean().item() if retrieve_gt_text_from_gt_audio_diag is not None else None,
+            'retrieve_gt_audio_from_gt_text_CLAP': retrieve_gt_audio_from_gt_text_diag.mean().item() if retrieve_gt_audio_from_gt_text_diag is not None else None,
+            'retrieve_gt_text_from_pred_audio_CLAP': retrieve_gt_text_from_pred_audio_diag.mean().item() if retrieve_gt_text_from_pred_audio_diag is not None else None,
+            'retrieve_gt_audio_from_pred_text_CLAP': retrieve_gt_audio_from_pred_text_diag.mean().item() if retrieve_gt_audio_from_pred_text_diag is not None else None
         },
         'averages': {
-            'retrieve_gt_text_from_gt_audio_CLAP': (retrieve_gt_text_from_gt_audio - torch.diag(retrieve_gt_text_from_gt_audio_diag)).mean().item(),
-            'retrieve_gt_audio_from_gt_text_CLAP': (retrieve_gt_audio_from_gt_text - torch.diag(retrieve_gt_audio_from_gt_text_diag)).mean().item(),
-            'retrieve_gt_text_from_pred_audio_CLAP': (retrieve_gt_text_from_pred_audio - torch.diag(retrieve_gt_text_from_pred_audio_diag)).mean().item(),
-            'retrieve_gt_audio_from_pred_text_CLAP': (retrieve_gt_audio_from_pred_text - torch.diag(retrieve_gt_audio_from_pred_text_diag)).mean().item()
+            'retrieve_gt_text_from_gt_audio_CLAP': (retrieve_gt_text_from_gt_audio - torch.diag(retrieve_gt_text_from_gt_audio_diag)).mean().item() if retrieve_gt_text_from_gt_audio_diag is not None else None,
+            'retrieve_gt_audio_from_gt_text_CLAP': (retrieve_gt_audio_from_gt_text - torch.diag(retrieve_gt_audio_from_gt_text_diag)).mean().item() if retrieve_gt_audio_from_gt_text_diag is not None else None,
+            'retrieve_gt_text_from_pred_audio_CLAP': (retrieve_gt_text_from_pred_audio - torch.diag(retrieve_gt_text_from_pred_audio_diag)).mean().item() if retrieve_gt_text_from_pred_audio_diag is not None else None,
+            'retrieve_gt_audio_from_pred_text_CLAP': (retrieve_gt_audio_from_pred_text - torch.diag(retrieve_gt_audio_from_pred_text_diag)).mean().item() if retrieve_gt_audio_from_pred_text_diag is not None else None
         }
     }
 
     return clap_score
-
-# compute retrieval metrics with the computed similarities, including MAP, MRR, P@k, R@k.
-# because multiple prompts can be associated with a single audio, we also provide an audio_idx to keep track of which prompt is associated with which audio
 
 
 def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10]):
@@ -262,18 +257,13 @@ def eval_dataset(model, dataset, limit_n=-1, preextracted_features=True, strict_
 
     # for key in ['gt_text_audio_sims_avg', 'gt_text_audio_sims_max', 'pred_audio_gt_text_sims_avg', 'pred_audio_gt_text_sims_max', 'pred_audio_gt_audio_sims_avg', 'pred_audio_gt_audio_sims_max']:
         
-        
-    retrieve_gt_audio_from_gt_text = sims_dict['retrieve_gt_audio_from_gt_text']
-    retrieve_gt_text_from_gt_audio = sims_dict['retrieve_gt_text_from_gt_audio']
-    retrieve_gt_text_from_pred_audio = sims_dict['retrieve_gt_text_from_pred_audio']
-    retrieve_gt_audio_from_pred_text = sims_dict['retrieve_gt_audio_from_pred_text']
     
     to_compute_ = {
-        'gt_audio_to_gt_text_retrieval': retrieve_gt_audio_from_gt_text,
-        'gt_text_to_gt_audio_retrieval': retrieve_gt_text_from_gt_audio,
-        'pred_audio_to_gt_text_retrieval': retrieve_gt_text_from_pred_audio,
-        'pred_text_to_gt_audio_retrieval': retrieve_gt_audio_from_pred_text
-    }
+        x:sims_dict[x] for x in ['retrieve_gt_audio_from_gt_text',
+                    'retrieve_gt_text_from_gt_audio',
+                    'retrieve_gt_text_from_pred_audio',
+                    'retrieve_gt_audio_from_pred_text'] if sims_dict[x] is not None
+        }
         
     for key in to_compute_.keys():
         retrieval_metrics = compute_retrieval_metrics(to_compute_[key], file_idx, ks=[1, 3, 5, 10])
@@ -299,10 +289,12 @@ def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs
 
         embeddings_and_preds = get_embeddings_and_preds(
             model, datum, preextracted_features, **kwargs)
+        
         audio_embeds.append(embeddings_and_preds['audio_embeds']) if isinstance(
             embeddings_and_preds['audio_embeds'], torch.Tensor) else embeddings_and_preds['audio_embeds']['embedding_proj']
+        
         text_embeds.append(
-            embeddings_and_preds['text_embeds']['projected_pooler_output'])
+            embeddings_and_preds['text_embeds'].get('projected_pooler_output',torch.zeros(1,1)))
         preds.append(embeddings_and_preds['preds'])
         file_idx.append(datum['file_idx'])
     

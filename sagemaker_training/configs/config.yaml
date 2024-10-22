@@ -3,8 +3,9 @@ s3_output_root: s3://maml-aimcdt/storage/julien/DiffGAR/training_output/
 pull_config: s3://maml-aimcdt/storage/julien/DiffGAR/training_configs/config.yaml
 training_input:
   # s3_data: s3://maml-aimcdt/datasets/song-describer/data/npy/1hz/
-  s3_data: s3://maml-aimcdt/datasets/song-describer/data/mule/npy/1hz/
+  # s3_data: s3://maml-aimcdt/datasets/song-describer/data/mule/npy/1hz/
   # s3_data: s3://maml-aimcdt/datasets/upmm/npy/1hz/
+  s3_data: s3://maml-aimcdt/datasets/upmm/mule/npy/1hz/
   s3_data_type: S3Prefix
   distribution: FullyReplicated
   input_mode: File

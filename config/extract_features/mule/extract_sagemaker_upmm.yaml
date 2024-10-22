@@ -45,7 +45,7 @@ model:
   scheduler_name: cvssp/audioldm2
   scheduler_pred_type: sample
   encoder_pair_kwargs:
-    audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/vital-resonance-107/checkpoint-step=200000-recent.ckpt
+    audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/jolly-sea-105/checkpoint-step=200000-recent.ckpt
   preextracted_latents: true
 data:
   task: 'upmm'
@@ -60,8 +60,8 @@ data:
   target_n_samples: 47999
 save_dir: /opt/ml/processing/output/mule/npy/1hz
 root_path: /opt/ml/processing/input
-extract_method: get_audio_embedding_from_data
-out_key: embeddings
+extract_method: extract_features
+out_key: projected_normalized
 hop: 16000
 limit_n: null
 save: true

@@ -45,7 +45,7 @@ model:
   scheduler_name: cvssp/audioldm2
   scheduler_pred_type: sample
   encoder_pair_kwargs:
-    audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/vital-resonance-107/checkpoint-step=200000-recent.ckpt
+    audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/jolly-sea-105/checkpoint-step=200000-recent.ckpt
   preextracted_latents: true
 data:
   task: 'song_describer'
@@ -57,10 +57,10 @@ data:
   num_workers: 4
   target_sr: 16000
   target_n_samples: 47999
-save_dir: /import/research_c4dm/jpmg86/song-describer/data/mule/npy/1hz
+save_dir: /import/research_c4dm/jpmg86/song-describer/data/muleproj/npy/1hz
 root_path: /import/research_c4dm/jpmg86/song-describer/data/audio
 extract_method: extract_features
-out_key: embeddings
+out_key: projected_normalized
 hop: 16000
 limit_n: null
 save: false
