@@ -35,6 +35,23 @@ def get_text_encoder(text_encoder, text_encoder_kwargs=None):
         return T5TextEncoder(**text_encoder_kwargs)
     
     
+def NTXent(preds, targets, temperature = 0.1, weight = 0.5):
+
+    B, D, T = preds.shape
+    labels = torch.arange(B).to(preds.device)
+    
+    preds = preds.mean(dim = -1)
+    targets = targets.mean(dim = -1)
+    
+    computed_sims = F.cosine_similarity(preds.unsqueeze(1), targets.unsqueeze(0), dim = -1) / temperature
+    computed_sims_2 = F.cosine_similarity(targets.unsqueeze(1), preds.unsqueeze(0), dim = -1) / temperature
+    
+    loss1 = F.cross_entropy(computed_sims, labels)
+    loss2 = F.cross_entropy(computed_sims_2, labels)
+    
+    return (loss1 + loss2) * weight /2
+    
+    
 class Slider(nn.Module):
     # simple nn parameter init with an embedding dimension
     def __init__(self, dim):
@@ -75,6 +92,11 @@ class DiffGarLDM(nn.Module):
         subject_flagging = False,
         train_slider_concept = None,
         device=None,
+        contrastive_loss = False,
+        contrastive_loss_kwargs = {
+            'temperature': 0.1,
+            'weight': 0.5,
+        },
         **kwargs
         
     ):
@@ -145,6 +167,10 @@ class DiffGarLDM(nn.Module):
         if self.train_slider_concept:
             self.slider = Slider(text_dim)
             
+            
+        self.contrastive_loss = contrastive_loss
+        self.contrastive_loss_kwargs = contrastive_loss_kwargs
+        
             
         if device is not None:
             self.to(device)
@@ -356,10 +382,24 @@ class DiffGarLDM(nn.Module):
             loss = F.mse_loss(model_pred.float(), target.float(), reduction="none")
             loss = loss.mean(dim=list(range(1, len(loss.shape)))) * mse_loss_weights
             loss = loss.mean()
+            
+        mse_loss = loss
+
+        if self.contrastive_loss:
+            contrastive_loss = NTXent(model_pred, target, **self.contrastive_loss_kwargs)
+            loss = (loss + contrastive_loss)/2
+            
+        loss_dict = {
+            'mse_loss': mse_loss,
+        }
+        
+        if self.contrastive_loss:
+            loss_dict['contrastive_loss'] = contrastive_loss
+
 
         assert model_pred.shape == target.shape, "Model prediction and target shape mismatch"
 
-        return loss
+        return loss, loss_dict
 
     @torch.no_grad()
     def inference(self, prompt, inference_scheduler, num_steps=20, guidance_scale=None, num_samples_per_prompt=1, 
@@ -367,28 +407,6 @@ class DiffGarLDM(nn.Module):
         device = next(self.parameters()).device
         batch_size = len(prompt) * num_samples_per_prompt
 
-        # if classifier_free_guidance:
-        #     encoded_text,uncond_encoded_text = self.encode_text_classifier_free(prompt, num_samples_per_prompt)
-            
-        #     prompt_embeds, boolean_prompt_mask, subject_mask = encoded_text['last_hidden_state'], encoded_text['attention_mask'], encoded_text.get('subject_masks', None)
-        #     # uncond_prompt_embeds, uncond_boolean_prompt_mask, _ = uncond_encoded_text['last_hidden_state'], uncond_encoded_text['attention_mask'], uncond_encoded_text.get('subject_masks', None)
-            
-        #     if slider and subject_mask:
-        #         prompt_embeds = slider.apply(prompt_embeds,boolean_prompt_mask, scale = slider_scale)
-        #         # uncond_prompt_embeds = slider.apply(uncond_prompt_embeds,uncond_boolean_prompt_mask, scale = slider_scale)
-                
-        #     prompt_embeds = prompt_embeds.repeat_interleave(num_samples_per_prompt, 0)
-        #     boolean_prompt_mask = boolean_prompt_mask.repeat_interleave(num_samples_per_prompt, 0)
-        #     uncond_prompt_embeds = uncond_prompt_embeds.repeat_interleave(num_samples_per_prompt, 0)
-        #     uncond_boolean_prompt_mask = uncond_boolean_prompt_mask.repeat_interleave(num_samples_per_prompt, 0)
-            
-            
-            
-        #     # prompt_embeds = torch.cat([uncond_prompt_embeds, prompt_embeds])
-        #     # boolean_prompt_mask = torch.cat([uncond_boolean_prompt_mask, boolean_prompt_mask])
-            
-        #     boolean_prompt_mask = (boolean_prompt_mask == 1).to(device)
-        # else:
         encoded_text = self.encode_text(prompt)
         
         prompt_embeds = encoded_text['last_hidden_state']
@@ -510,12 +528,16 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
                 freeze_unet=False,
                 uncondition=False,
                 subject_flagging = False,
+                contrastive_loss = False,
+                contrastive_loss_kwargs = {
+                    'temperature': 0.1,
+                    'weight': 0.5,
+                },
                 train_slider_concept = None,
                 preextracted_latents = True,
                 optimizer: OptimizerCallable = None,
                 scheduler = None,
-                
-                ):#required for UNet architecture
+                ):
         
         print("LightningDiffGar init")
         super().__init__(encoder_pair=encoder_pair,
@@ -533,7 +555,9 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
                     freeze_unet=freeze_unet,
                     uncondition=uncondition,
                     subject_flagging=subject_flagging,
-                    train_slider_concept=train_slider_concept)
+                    train_slider_concept=train_slider_concept,
+                    contrastive_loss=contrastive_loss,
+                    contrastive_loss_kwargs=contrastive_loss_kwargs)
         
         self.preextracted_latents = preextracted_latents
         self.optimizer = optimizer
@@ -547,11 +571,6 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
         file_path  = batch['file_path']
         
         prompt_path = zip(prompt, file_path)
-        # print prompt path tuples
-        # for p, f in prompt_path:
-        #     print(f'Prompt: {p}, File: {f}') if self.first_run else None
-            
-        
         
         if not self.preextracted_latents:
             latents = self.encoder_pair.get_audio_embedding_from_data(audio)
@@ -572,13 +591,17 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
         # raise ValueError("Stopping after computing similarities")
         
         latents = latents.permute(0,2,1)
-        loss = self(latents, prompt)
+        loss, loss_dict = self(latents, prompt)
         
         
         
         
         
         self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True)
+        
+        for key in loss_dict:
+            self.log(f'train_{key}', loss_dict[key], on_step=True, on_epoch=True, prog_bar=True)
+        
         # log the learning rate
         self.log('learning_rate', self.trainer.optimizers[0].param_groups[0]['lr'], on_step=True, on_epoch=False, prog_bar=True)
         
@@ -604,22 +627,18 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
                 self.log('gt_clap', gt_clap, on_step=True, on_epoch=True, prog_bar=True)
                 self.log('pred_clap', pred_clap, on_step=True, on_epoch=True, prog_bar=True)
             
-            except:
-                
+            except Exception as e:
+                print(f"Error computing CLAP score: {e}")
                 pass
             
             audio_to_audio_sims = preds.mean(dim=1) @ latents.mean(dim=1).t()
             audio_to_audio_sims = audio_to_audio_sims.diag().mean()
+            gt_audio_to_audio_sims = latents.mean(dim=1) @ latents.mean(dim=1).t()
+            gt_audio_to_audio_sims = gt_audio_to_audio_sims.diag().mean()
             
             self.log('A2A_CLAP', audio_to_audio_sims, on_step=True, on_epoch=True, prog_bar=True)
-                
+            self.log('GT_A2A_CLAP', gt_audio_to_audio_sims, on_step=True, on_epoch=True, prog_bar=True)
             
-            
-            
-            
-            
-            
-            # raise ValueError("Stopping after generating samples")
             
         if self.scheduler is not None:
             self.scheduler.step()
@@ -637,13 +656,12 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
             latents = audio
         
         latents = latents.permute(0,2,1)
-        loss = self(latents, prompt, validation_mode=True)
+        loss, loss_dict = self(latents, prompt, validation_mode=True)
         
         self.log('val_loss', loss, on_step=False, on_epoch=True, prog_bar=True)
         
-        if self.global_step % 10000 == 0:
-            ## generate some samples and compute clap score
-            pass
+        for key in loss_dict:
+            self.log(f'val_{key}', loss_dict[key], on_step=False, on_epoch=True, prog_bar=True)
         
         return loss
     

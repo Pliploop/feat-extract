@@ -1,0 +1,111 @@
+# pytorch_lightning: : 2.1.0
+
+
+#define a tiny, small, medium, large, and huge unet config
+
+
+
+
+seed_everything: 42
+trainer:
+  accelerator: auto
+  strategy: auto
+  devices: auto
+  num_nodes: 1
+  precision: null
+  logger: null
+  callbacks: null
+  fast_dev_run: false
+  max_epochs: null
+  min_epochs: null
+  max_steps: 100000
+  min_steps: null
+  max_time: null
+  limit_train_batches: null
+  limit_val_batches: null
+  limit_test_batches: null
+  limit_predict_batches: null
+  overfit_batches: 0.0
+  val_check_interval: null
+  check_val_every_n_epoch: 1
+  num_sanity_val_steps: 0
+  log_every_n_steps: null
+  enable_checkpointing: null
+  enable_progress_bar: null
+  enable_model_summary: null
+  accumulate_grad_batches: 1
+  gradient_clip_val: null
+  gradient_clip_algorithm: null
+  deterministic: null
+  benchmark: null
+  inference_mode: true
+  use_distributed_sampler: true
+  profiler: null
+  detect_anomaly: false
+  barebones: false
+  plugins: null
+  sync_batchnorm: false
+  reload_dataloaders_every_n_epochs: 0
+  default_root_dir: null
+model:
+  encoder_pair: clap
+  scheduler_name: cvssp/audioldm2
+  scheduler_pred_type: sample
+  contrastive_loss: true
+  contrastive_loss_kwargs:
+    temperature: 0.1
+    weight: 0.1
+  encoder_pair_kwargs:
+    enable_fusion: false
+    amodel: HTSAT-base
+    device: cpu #just for init then sent to the right device
+  encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
+  unet_model_config:
+    name: small
+    dim: 1
+    in_channels: 512
+    out_channels: 512
+    channels: [512, 512, 512, 1024]
+    factors: [2, 2,4, 4]
+    items: [1, 1, 1, 1]
+    attentions: [0, 0, 1, 1]
+    cross_attentions: [0, 0, 1, 1]
+    attention_features: 768
+    attention_heads: 4
+    embedding_features: 768
+    use_classifier_free_guidance: True
+    embedding_max_length: 77
+    resnet_groups :  1
+    classifier_free_guidance_strength: .1 # for training, masking (higher = more masking)
+    infer_classifier_free_guidance_strength: 3 # for inference, interpolation
+  preextracted_latents: true
+  optimizer: 
+    class_path: torch.optim.AdamW
+    init_args:
+      lr: 0.0001
+      weight_decay: 0.00001
+      betas: [0.9, 0.999]
+  scheduler:
+    class_name: CosineDecayWithLinearWarmup
+    init_args:
+      warmup_steps: 5000
+      max_steps: 100000
+      base_lr: 0.0001
+      final_lr: 0.0000001
+data:
+  task: 'song_describer'
+  task_kwargs:
+    data_path: /opt/ml/input/data/training
+    csv_path: s3://maml-aimcdt/datasets/song-describer/data/song_describer.csv
+  preextracted_features: true
+  truncate_preextracted: 64
+  batch_size: 32
+  num_workers: 4
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
+  # root_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+  # new_dir: /import/research_c4dm/jpmg86/song-describer/data/npy
+log: false
+log_model: false
+ckpt_path: s3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints
+resume_id: null
+resume_from_checkpoint: null

@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import itertools
 from tqdm import tqdm
+import json
 
 
 def generate_from_prompts(model, prompts, **kwargs):
@@ -25,7 +26,16 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
     audio = torch.stack(audio) if isinstance(audio, list) else audio
 
     preds = generate_from_prompts(
-        model, prompts=prompt, **kwargs).permute(0, 2, 1)
+        model, prompts=prompt, **kwargs)
+    
+    # invert the last two dimensions of the preds tensor no matter the shape
+    
+    preds = preds.transpose(-1, -2)
+    
+    preds = preds.mean(dim=0, keepdim=True)
+    
+    
+    
 
     return {
         'text_embeds': text_embeds,
@@ -39,15 +49,28 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
 # - predicted audio embedding and ground truth text embeddings
 # - predicted audio embedding and ground truth audio embeddings
 
-def compute_sims(text_embeds, audio_embeds, preds):
 
-    print(f"text_embeds: {text_embeds.shape}")
-    print(f"audio_embeds: {audio_embeds.shape}")
-    print(f"preds: {preds.shape}")
+def compute_distance(x,y, distance='cosine'):
+    
+    if distance == 'cosine':
+        return x @ y.t()
+    elif distance == 'euclidean':
+        return torch.cdist(x, y, p=2)
+    else:
+        raise ValueError(f"Distance {distance} not supported")
+
+
+def compute_sims(text_embeds, audio_embeds, preds, distance='cosine'):
+
+    # print(f"text_embeds: {text_embeds.shape}")
+    # print(f"audio_embeds: {audio_embeds.shape}")
+    # print(f"preds: {preds.shape}")
+    
+    
+    
     
     audio_embeds = audio_embeds.mean(dim=1)
     preds = preds.mean(dim=1)
-    
     
     # if the embedding dimensions are the same for text embeds and audio embeds, we can compute the similarities directly
 
@@ -58,17 +81,17 @@ def compute_sims(text_embeds, audio_embeds, preds):
 
     if text_embeds.shape[-1] == audio_embeds.shape[-1]:
 
-        retrieve_gt_audio_from_gt_text = text_embeds @ audio_embeds.t()
-        retrieve_gt_text_from_gt_audio = audio_embeds @ text_embeds.t()
-        retrieve_gt_text_from_pred_audio = preds @ text_embeds.t()
+        # retrieve_gt_audio_from_gt_text = text_embeds @ audio_embeds.t()
         
-        
-            
-        print(f"retrieve_gt_audio_from_gt_text: {retrieve_gt_audio_from_gt_text.shape}")
-        print(f"retrieve_gt_text_from_gt_audio: {retrieve_gt_text_from_gt_audio.shape}")
-        print(f"retrieve_gt_text_from_pred_audio: {retrieve_gt_text_from_pred_audio.shape}")
+        retrieve_gt_audio_from_gt_text = compute_distance(text_embeds, audio_embeds, distance=distance)
+        retrieve_gt_text_from_gt_audio = compute_distance(audio_embeds, text_embeds, distance=distance)
+        retrieve_gt_text_from_pred_audio = compute_distance(preds, text_embeds, distance=distance)
     
-    retrieve_gt_audio_from_pred_text = preds @ audio_embeds.t()
+    
+    else:
+        retrieve_gt_audio_from_gt_text = compute_distance(audio_embeds, audio_embeds, distance=distance)
+    retrieve_gt_audio_from_pred_text = compute_distance(preds, audio_embeds, distance=distance)
+    
     #instead of dot-product, we can use cosine similarity
     
     # retrieve_gt_audio_from_pred_text = audio_embeds @ audio_embeds.t()
@@ -93,55 +116,16 @@ def compute_sims(text_embeds, audio_embeds, preds):
 
 def compute_clap_score(sims_dict):
 
-    # gt_text_audio_sims_avg = sims_dict['gt_text_audio_sims_avg']
-    # gt_text_audio_sims_max = sims_dict['gt_text_audio_sims_max']
-    # pred_audio_gt_text_sims_avg = sims_dict['pred_audio_gt_text_sims_avg']
-    # pred_audio_gt_text_sims_max = sims_dict['pred_audio_gt_text_sims_max']
-    # pred_audio_gt_audio_sims_avg = sims_dict['pred_audio_gt_audio_sims_avg']
-    # pred_audio_gt_audio_sims_max = sims_dict['pred_audio_gt_audio_sims_max']
-
-
     retrieve_gt_text_from_gt_audio = sims_dict['retrieve_gt_text_from_gt_audio']
     retrieve_gt_audio_from_gt_text = sims_dict['retrieve_gt_audio_from_gt_text']
     retrieve_gt_text_from_pred_audio = sims_dict['retrieve_gt_text_from_pred_audio']
     retrieve_gt_audio_from_pred_text = sims_dict['retrieve_gt_audio_from_pred_text']
 
-    # gt_text_audio_sims_avg_diag = torch.diag(gt_text_audio_sims_avg)
-    # gt_text_audio_sims_max_diag = torch.diag(gt_text_audio_sims_max)
-
-    # pred_audio_gt_text_sims_avg_diag = torch.diag(pred_audio_gt_text_sims_avg)
-    # pred_audio_gt_text_sims_max_diag = torch.diag(pred_audio_gt_text_sims_max)
-
-    # pred_audio_gt_audio_sims_avg_diag = torch.diag(
-    #     pred_audio_gt_audio_sims_avg)
-    # pred_audio_gt_audio_sims_max_diag = torch.diag(
-    #     pred_audio_gt_audio_sims_max)
-    
     
     retrieve_gt_text_from_gt_audio_diag = torch.diag(retrieve_gt_text_from_gt_audio) if retrieve_gt_text_from_gt_audio is not None else None
     retrieve_gt_audio_from_gt_text_diag = torch.diag(retrieve_gt_audio_from_gt_text) if retrieve_gt_audio_from_gt_text is not None else None
     retrieve_gt_text_from_pred_audio_diag = torch.diag(retrieve_gt_text_from_pred_audio) if retrieve_gt_text_from_pred_audio is not None else None
     retrieve_gt_audio_from_pred_text_diag = torch.diag(retrieve_gt_audio_from_pred_text) if retrieve_gt_audio_from_pred_text is not None else None
-    
-
-    # clap_score = {
-    #     'diagonals': {
-    #         'gt_text_audio_sims_CLAP_avg': gt_text_audio_sims_avg_diag.mean(),
-    #         'gt_text_audio_sims_CLAP_max': gt_text_audio_sims_max_diag.mean(),
-    #         'pred_audio_gt_text_sims_CLAP_avg': pred_audio_gt_text_sims_avg_diag.mean(),
-    #         'pred_audio_gt_text_sims_CLAP_max': pred_audio_gt_text_sims_max_diag.mean(),
-    #         'pred_audio_gt_audio_sims_CLAP_avg': pred_audio_gt_audio_sims_avg_diag.mean(),
-    #         'pred_audio_gt_audio_sims_CLAP_max': pred_audio_gt_audio_sims_max_diag.mean()},
-    #     'averages': {
-    #         'gt_text_audio_sims_CLAP_avg': (gt_text_audio_sims_avg - torch.diag(gt_text_audio_sims_avg_diag)).mean(),
-    #         'gt_text_audio_sims_CLAP_max': (gt_text_audio_sims_max - torch.diag(gt_text_audio_sims_max_diag)).mean(),
-    #         'pred_audio_gt_text_sims_CLAP_avg': (pred_audio_gt_text_sims_avg - torch.diag(pred_audio_gt_text_sims_avg_diag)).mean(),
-    #         'pred_audio_gt_text_sims_CLAP_max': (pred_audio_gt_text_sims_max - torch.diag(pred_audio_gt_text_sims_max_diag)).mean(),
-    #         'pred_audio_gt_audio_sims_CLAP_avg': (pred_audio_gt_audio_sims_avg - torch.diag(pred_audio_gt_audio_sims_avg_diag)).mean(),
-    #         'pred_audio_gt_audio_sims_CLAP_max': (pred_audio_gt_audio_sims_max - torch.diag(pred_audio_gt_audio_sims_max_diag)).mean()
-            
-    #     }
-    # }
     
     clap_score = {
         'diagonals': {
@@ -161,7 +145,7 @@ def compute_clap_score(sims_dict):
     return clap_score
 
 
-def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10]):
+def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10], distance='cosine'):
 
     
 
@@ -170,19 +154,23 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
     metrics['Recall'] = {}
     metrics['Precision'] = {}
     metrics['mAP'] = {}
+    metrics['Hit Rate'] = {}
     
     for k in ks:
         metrics['Recall'][k] = 0
         metrics['Precision'][k] = 0
         metrics['mAP'][k] = 0
+        metrics['Hit Rate'][k] = 0
     
     ranks_ = []
 
-    # Iterate over each query
+
+    descending = True if distance in ['cosine'] else False
+
     
     for i in range(query_key_sim.shape[0]):
         ground_truth_idxx = torch.tensor(ground_truth_idx[i]).unsqueeze(-1)
-        ranking = torch.argsort(query_key_sim[i], descending=True)
+        ranking = torch.argsort(query_key_sim[i], descending=descending)
         # print(f"ranking: {ranking}")
         # print(f"ground_truth_idxx: {ground_truth_idxx}")
         
@@ -199,6 +187,7 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
             
             metrics['Recall'][k] += relevant_in_top_k / total_relevant  # Recall@k
             metrics['Precision'][k] += relevant_in_top_k / k  # Precision@k
+            metrics['Hit Rate'][k] += 1 if relevant_in_top_k > 0 else 0  # Hit Rate@k
 
             # mAP@k
             precisions = [(r < k) * (1 / (r + 1)) for r in ranks]
@@ -220,12 +209,11 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10])
             for k in ks:
                 metrics[key][k] /= num_queries
                 
-    print(metrics)
     return metrics
 
 
 @torch.no_grad()
-def eval_dataset(model, dataset, limit_n=-1, preextracted_features=True, strict_retrieval = False, **kwargs):
+def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_features=True, strict_retrieval = False, **kwargs):
 
     model.eval()
 
@@ -244,10 +232,14 @@ def eval_dataset(model, dataset, limit_n=-1, preextracted_features=True, strict_
 
     audio_embeds = torch.stack(audio_embeds).cpu()
     text_embeds = torch.cat(text_embeds).cpu()
+    
     preds = torch.cat(preds).cpu()
 
-    sims_dict = compute_sims(text_embeds, audio_embeds, preds)
-    clap_score = compute_clap_score(sims_dict)
+    sims_dict = compute_sims(text_embeds, audio_embeds, preds, distance=distance)
+    clap_sims = compute_sims(text_embeds, audio_embeds, preds, distance='cosine')
+    
+    
+    clap_score = compute_clap_score(clap_sims)
 
     all_metrics.update(clap_score)
     
@@ -266,13 +258,15 @@ def eval_dataset(model, dataset, limit_n=-1, preextracted_features=True, strict_
         }
         
     for key in to_compute_.keys():
-        retrieval_metrics = compute_retrieval_metrics(to_compute_[key], file_idx, ks=[1, 3, 5, 10])
+        retrieval_metrics = compute_retrieval_metrics(to_compute_[key], file_idx, ks=[1, 3, 5, 10], distance=distance)
 
         all_metrics.update({
             key : retrieval_metrics
         })
 
-    return all_metrics
+
+    print(json.dumps(all_metrics, indent=4))
+    return all_metrics, clap_sims
 
 
 def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs):
@@ -297,6 +291,7 @@ def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs
             embeddings_and_preds['text_embeds'].get('projected_pooler_output',torch.zeros(1,1)))
         preds.append(embeddings_and_preds['preds'])
         file_idx.append(datum['file_idx'])
+        
     
     ##file_idx can contain multiple times the same idx. make a new list that contains
     ## the list of idxs that contain the same idx

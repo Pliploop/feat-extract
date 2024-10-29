@@ -58,7 +58,7 @@ data:
   num_workers: 4
   target_sr: 16000
   target_n_samples: 47999
-save_dir: /opt/ml/processing/output/mule/npy/1hz
+save_dir: /opt/ml/processing/output/muleproj/npy/1hz
 root_path: /opt/ml/processing/input
 extract_method: extract_features
 out_key: projected_normalized

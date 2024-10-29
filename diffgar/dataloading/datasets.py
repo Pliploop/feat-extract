@@ -161,17 +161,18 @@ class TextAudioDataset(Dataset):
                 file_path = self.annotations[i]['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
                 
                 audio = item['audio'].squeeze().to(device)
+                text = item['prompt']
                 
-                if audio.shape[0] > 100:
-                    chunks = torch.split(audio, 100, dim=0)
+                if audio.shape[0] > 200:
+                    chunks = torch.split(audio, 200, dim=0)
                     chunks = list(chunks)
                     audio_features = []
                     for chunk in chunks:
-                        feat = getattr(model, extract_method)(chunk, **extract_kwargs)[out_key]
+                        feat = getattr(model, extract_method)(chunk, text=text, **extract_kwargs)[out_key]
                         audio_features.append(feat)
                     audio_features = torch.cat(audio_features, dim=0)
                 else:
-                    audio_features = getattr(model, extract_method)(audio.to(device), **extract_kwargs)[out_key]
+                    audio_features = getattr(model, extract_method)(audio.to(device), text=text, **extract_kwargs)[out_key]
                 
                 
                 

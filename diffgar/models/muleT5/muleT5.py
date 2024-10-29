@@ -320,7 +320,7 @@ class NFNet(nn.Module):
 class MULE(nn.Module):
     
     def __init__(self,
-                 encoder = NFNet(),
+                 encoder = NFNet,
                  head_dims = [[1728,1728,512]],
                  temperature = 0.1,
                  feat_extract_head = 0,
@@ -329,7 +329,7 @@ class MULE(nn.Module):
         super(MULE,self).__init__()
         
         
-        self.encoder = encoder
+        self.encoder = encoder()
         
         self.head_dims = head_dims
         self.encoder_dim = self.encoder.embed_dim if encoder else None
