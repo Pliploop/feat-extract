@@ -68,7 +68,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 1
+    weight: 0.5
   optimizer: 
     class_path: torch.optim.AdamW
     init_args:
@@ -89,7 +89,7 @@ data:
   batch_size: 32
   num_workers: 4
   root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
-  new_dir: /import/research_c4dm/jpmg86/song-describer/data/muleproj/npy
+  new_dir: /import/research_c4dm/jpmg86/song-describer/data/muleproj/npy/1hz
 log: false
 log_model: false
 ckpt_path: s3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints

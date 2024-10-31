@@ -71,7 +71,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 1
+    weight: 0.5
   optimizer: 
     class_path: torch.optim.AdamW
     init_args:

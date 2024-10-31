@@ -54,7 +54,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.1
+    weight: 0.5
   encoder_pair_kwargs:
     audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/jolly-sea-105/checkpoint-step=200000-recent.ckpt
   unet_model_config:
