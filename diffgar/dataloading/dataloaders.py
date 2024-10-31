@@ -43,6 +43,41 @@ def get_song_describer_annotations(data_path = None, csv_path = None, val_split 
     return records
 
 
+
+def get_musiccaps_annotations(data_path = None, csv_path = None, val_split = 0.1, test_split = 0.1):
+        
+        df = pd.read_csv(csv_path)
+        df['file_path'] = data_path + '/' + df['ytid'] + '.wav'
+        
+        records = df.to_dict(orient = 'records')
+        
+        for record in records:
+            record['caption'] = {sha256(record['caption'].encode('utf-8')).hexdigest(): record['caption']}
+            
+        if val_split == 0.0:
+            print('No validation split')
+            for record in records:
+                record['split'] = 'train'
+            return records
+        
+        # split into train, val, test
+        train_indices, test_indices = train_test_split(range(len(records)), test_size = test_split + val_split, random_state = 42)
+        val_indices, test_indices = train_test_split(test_indices, test_size = test_split/(test_split + val_split), random_state = 42)
+        
+        
+        
+        for idx in train_indices:
+            records[idx]['split'] = 'train'
+            
+        for idx in val_indices:
+            records[idx]['split'] = 'val'
+            
+        for idx in test_indices:
+            records[idx]['split'] = 'test'
+            
+        return records
+            
+
 def get_upmm_annotations(data_path = None, csv_path = None):
     
     data_path = data_path if data_path is not None else '/import/research_c4dm/jpmg86/upmm/data/audio'

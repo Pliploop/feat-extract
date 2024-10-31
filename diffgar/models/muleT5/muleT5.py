@@ -450,10 +450,10 @@ class MuleT5EncoderPair(nn.Module):
         return self.text_encoder.get_text_embedding(prompts, **kwargs)
     
     def get_audio_embedding_from_data(self, data, **kwargs):
-        return self.audio_encoder.extract_features(data)
+        return self.audio_encoder.extract_features(data, **kwargs)
     
-    def extract_features(self, data):
-        return self.get_audio_embedding_from_data(data)
+    def extract_features(self, data, **kwargs):
+        return self.get_audio_embedding_from_data(data, **kwargs)
     
     def freeze(self):
         for param in self.text_encoder.parameters():

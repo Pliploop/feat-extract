@@ -49,7 +49,9 @@ def NTXent(preds, targets, temperature = 0.1, weight = 0.5):
     loss1 = F.cross_entropy(computed_sims, labels)
     loss2 = F.cross_entropy(computed_sims_2, labels)
     
-    return (loss1 + loss2) * weight /2
+    # return (loss1 + loss2) * weight /2
+    return (loss1 + loss2) * weight
+    # return loss1 * weight
     
     
 class Slider(nn.Module):
@@ -387,7 +389,7 @@ class DiffGarLDM(nn.Module):
 
         if self.contrastive_loss:
             contrastive_loss = NTXent(model_pred, target, **self.contrastive_loss_kwargs)
-            loss = (loss + contrastive_loss)/2
+            loss = mse_loss + contrastive_loss
             
         loss_dict = {
             'mse_loss': mse_loss,

@@ -31,7 +31,11 @@ def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
     encoder_pair_to_new_dir = {
         'song_describer': {
             'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/muleproj/npy/1hz',
-            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/npy'
+            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/clap/npy'
+        },
+        'musiccaps': {
+            'muleT5':   '/import/research_c4dm/jpmg86/musiccaps/mule_npy/1hz',
+            'clap':    '/import/research_c4dm/jpmg86/musiccaps/clap_npy/1hz'
         }
     }
 
@@ -39,6 +43,21 @@ def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
         'song_describer': {
             'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/audio',
             'clap':    '/import/research_c4dm/jpmg86/song-describer/data/audio'
+        },
+        'musiccaps': {
+            'muleT5':   '/import/c4dm-datasets/musiccaps/musiccaps_10s',
+            'clap':    '/import/c4dm-datasets/musiccaps/musiccaps_10s'
+        }
+    }
+    
+    task_to_task_kws = {
+        'musiccaps': {
+                'data_path': '/import/c4dm-datasets/musiccaps/musiccaps_10s',
+                'csv_path': '/import/c4dm-datasets/musiccaps/musiccaps-public.csv'
+        },
+        'song_describer': {
+                'data_path': '/import/research_c4dm/jpmg86/song-describer/data/audio',
+                'csv_path': '/import/research_c4dm/jpmg86/song-describer/data/song_describer.csv'
         }
     }
 
@@ -46,10 +65,9 @@ def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
 
     latent_dm = TextAudioDataModule(
         task=task,
-        batch_size=2,
-        target_n_samples=480000,
+        task_kwargs=task_to_task_kws[task],
+        batch_size=1,
         preextracted_features=True,
-        target_sr=48000,
         truncate_preextracted=64,
         new_dir=encoder_pair_to_new_dir[task][training_encoder_pair],
         root_dir=encoder_pair_to_old_dir[task][training_encoder_pair]
@@ -221,7 +239,7 @@ if __name__ == '__main__':
                     # 'MULET5': {'model_name': 'diffgar-training-2024-10-22-23-39-20-2xguwt-ip-10-2-125-92.ec2.internal'},
                 },
                 'song_describer': {
-                    # 'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
+                    'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
                     'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
                     'MULET5': {'model_name': 'diffgar-training-2024-10-23-10-24-58-ecrjda-ip-10-2-200-242.ec2.internal'},
                 }
@@ -341,58 +359,72 @@ if __name__ == '__main__':
     metrics = {}
     sims = {}
     
-    model_names = ['curious-elevator-143']
+    model_names = [
+        'creepy-ripple-159',
+        'firm-frog-157',
+        'rural-haze-156',
+        'good-brook-155',
+        'eternal-flower-154',
+        'lucky-thunder-151',
+        'peachy-bee-145',
+        'curious-elevator-143'
+    ]
 
     # guidance_scales = [0,0.1,0.3,0.5,1,5,10]
     guidance_scales = [
         3
     ]
     num_samples_per_prompt = [
-        1,
+        # 1,
         5,
-        20,
-        100
+        # 20,
+        # 100
     ]
 
     for model_name in model_names:
         for task in tasks:
-            try:
-                metrics_, sims_ = run_eval(
-                    num_samples_per_prompt=num_samples_per_prompt,
-                    guidance_scales=guidance_scales,
-                    model_names=[model_name],
-                    task=task,
-                    log=False,
-                    device=device,
-                    distance='cosine',
-                    limit_n=None
-                )
-                if task not in metrics:
-                    metrics[task] = {
-                        model_name: metrics_
-                    }
-                else:
-                    metrics[task].update({
-                        model_name: metrics_
-                    })
-                
-                if task not in sims:
-                    sims[task] = {
-                        model_name: sims_
-                    }
-                else:
-                    sims[task].update({
-                        model_name: sims_
-                    })
+            # try:
+            metrics_, sims_ = run_eval(
+                num_samples_per_prompt=num_samples_per_prompt,
+                guidance_scales=guidance_scales,
+                model_names=[model_name],
+                task=task,
+                log=False,
+                device=device,
+                distance='cosine',
+                limit_n=None
+            )
+            if task not in metrics:
+                metrics[task] = {
+                    model_name: metrics_
+                }
+            else:
+                metrics[task].update({
+                    model_name: metrics_
+                })
+            
+            if task not in sims:
+                sims[task] = {
+                    model_name: sims_
+                }
+            else:
+                sims[task].update({
+                    model_name: sims_
+                })
 
-                update_json_file('results/metrics_contrastive.json', task, model_name, metrics_)
-                update_pickle_file('results/sims_contrastive.pkl', task, model_name, sims_)
 
-            except Exception as e:
-                print(
-                    f'Failed to evaluate {model_name} with task {task} and num_samples_per_prompt {num_samples_per_prompt}')
+            json_path = f'results/metrics_{task}_contrastive.json'
+            pickle_path = f'results/sims_{task}_contrastive.pkl'
 
- 
+            update_json_file(json_path, task, model_name, metrics_)
+            update_pickle_file(pickle_path, task, model_name, sims_)
+
+            # except Exception as e:
+            #     print(
+            #         f'Failed to evaluate {model_name} with task {task} and num_samples_per_prompt {num_samples_per_prompt}')
+            #     print(e)
+            #     raise 
+
 
     
     # save sims as pkl

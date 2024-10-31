@@ -92,15 +92,23 @@ class TextAudioDataset(Dataset):
                     )
                 audio = audio.mean(0,keepdim=True) if not return_full_audio else audio.mean(1,keepdim=True)
             else:
+                file_path = annot['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
                 try:
-                    file_path = annot['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
+                    
                     audio = np.load(file_path,mmap_mode='r')
                     if audio.shape[0] > self.truncate_preextracted:
                         rand_start = random.randint(0,audio.shape[0]-self.truncate_preextracted)
                         audio = audio[rand_start:rand_start+self.truncate_preextracted]
                         audio = torch.tensor(audio)
                     else:
-                        return self[idx + 1]
+                        #repeat the audio to match the target_n_samples
+                        n_repeat = self.truncate_preextracted // audio.shape[0] +1
+                        audio = np.repeat(audio, n_repeat, axis=0)
+                        audio = torch.tensor(audio)
+                        rand_start = random.randint(0,audio.shape[0]-self.truncate_preextracted)
+                        audio = audio[rand_start:rand_start+self.truncate_preextracted]
+                        audio = torch.tensor(audio)
+                        
                 except Exception as e:
                     print(f"Error loading preextracted features: {e}") if verbose else None
                     return self[idx + 1]
@@ -168,11 +176,11 @@ class TextAudioDataset(Dataset):
                     chunks = list(chunks)
                     audio_features = []
                     for chunk in chunks:
-                        feat = getattr(model, extract_method)(chunk, text=text, **extract_kwargs)[out_key]
+                        feat = getattr(model, extract_method)(chunk, **extract_kwargs)[out_key]
                         audio_features.append(feat)
                     audio_features = torch.cat(audio_features, dim=0)
                 else:
-                    audio_features = getattr(model, extract_method)(audio.to(device), text=text, **extract_kwargs)[out_key]
+                    audio_features = getattr(model, extract_method)(audio.to(device), **extract_kwargs)[out_key]
                 
                 
                 
