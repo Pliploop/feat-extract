@@ -54,7 +54,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.5
+    weight: 0.1
   encoder_pair_kwargs:
     enable_fusion: false
     amodel: HTSAT-base

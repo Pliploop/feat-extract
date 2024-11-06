@@ -71,7 +71,12 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.5
+    weight: 0.1
+    # schedule: linear
+    # schedule_kws:
+    #   min_weight: 0
+    #   delay: 20000
+    #   max_steps: 80000
   optimizer: 
     class_path: torch.optim.AdamW
     init_args:

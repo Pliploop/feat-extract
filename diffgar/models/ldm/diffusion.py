@@ -15,7 +15,7 @@ from pytorch_lightning.cli import OptimizerCallable
 from torch import optim
 from diffgar.models.utils.schedulers import *
 from .text_encoders import T5TextEncoder
-
+import numpy as np
 import yaml
 
 
@@ -35,23 +35,66 @@ def get_text_encoder(text_encoder, text_encoder_kwargs=None):
         return T5TextEncoder(**text_encoder_kwargs)
     
     
-def NTXent(preds, targets, temperature = 0.1, weight = 0.5):
+    
+    
+def constant_schedule(step, weight):
+    return weight
 
-    B, D, T = preds.shape
-    labels = torch.arange(B).to(preds.device)
+def linear_schedule(step, weight, min_weight = 0.1, delay = 0, max_steps = 100000):
+    if step < delay:
+        return min_weight
+    elif step > max_steps:
+        return weight
+    else:
+        return min_weight + (weight - min_weight) * (step - delay) / (max_steps - delay)
     
-    preds = preds.mean(dim = -1)
-    targets = targets.mean(dim = -1)
+def reverse_cosine_schedule(step, weight, min_weight = 0.1, delay = 0, max_steps = 100000):
+    if step < delay:
+        return min_weight
+    else:
+        #cosine from min_weight to weight over max_steps - delay steps
+        return min_weight + 0.5 * (1 - torch.cos((step - delay) / (max_steps - delay) * np.pi)) * (weight - min_weight)
     
-    computed_sims = F.cosine_similarity(preds.unsqueeze(1), targets.unsqueeze(0), dim = -1) / temperature
-    computed_sims_2 = F.cosine_similarity(targets.unsqueeze(1), preds.unsqueeze(0), dim = -1) / temperature
     
-    loss1 = F.cross_entropy(computed_sims, labels)
-    loss2 = F.cross_entropy(computed_sims_2, labels)
     
-    # return (loss1 + loss2) * weight /2
-    return (loss1 + loss2) * weight
-    # return loss1 * weight
+class NTXent(nn.Module):
+    def __init__(self, temperature=0.1, weight=0.5, schedule='constant', schedule_kws={}):
+        super().__init__()
+        self.temperature = temperature
+        self.original_weight = weight
+        
+        self.weight = weight
+        
+        self.schedule = eval(f'{schedule}_schedule')
+        self.schedule_kws = schedule_kws
+        
+    def get_weight(self, step):
+        self.weight = self.schedule(step, self.original_weight, **self.schedule_kws)
+        
+    
+    def forward(self, preds, targets, step = 0):
+        
+        self.get_weight(step)
+        
+        
+        B, D, T = preds.shape
+        labels = torch.arange(B).to(preds.device)
+
+        preds = preds.mean(dim=-1)
+        targets = targets.mean(dim=-1)
+
+        computed_sims = F.cosine_similarity(preds.unsqueeze(1), targets.unsqueeze(0), dim=-1) / self.temperature
+        computed_sims_2 = F.cosine_similarity(targets.unsqueeze(1), preds.unsqueeze(0), dim=-1) / self.temperature
+    
+        #instead of cosine sim, matrix multiplication
+        # computed_sims = preds @ targets.t() / self.temperature
+        # computed_sims_2 = targets @ preds.t() / self.temperature
+
+
+        loss1 = F.cross_entropy(computed_sims, labels)
+        loss2 = F.cross_entropy(computed_sims_2, labels)
+
+        return (loss1 + loss2)
     
     
 class Slider(nn.Module):
@@ -170,8 +213,9 @@ class DiffGarLDM(nn.Module):
             self.slider = Slider(text_dim)
             
             
-        self.contrastive_loss = contrastive_loss
-        self.contrastive_loss_kwargs = contrastive_loss_kwargs
+        if contrastive_loss:
+            self.contrastive_loss = NTXent(**contrastive_loss_kwargs)
+        
         
             
         if device is not None:
@@ -327,13 +371,6 @@ class DiffGarLDM(nn.Module):
             # randomly sample a tensor of scales for the slider of shape bsz, between -1 and 1
             scales = torch.rand(bsz) * 2 - 1
             encoder_hidden_states = self.slider.apply(encoder_hidden_states, subject_mask, scale = scales)
-        
-        # if self.uncondition:
-        #     mask_indices = [k for k in range(len(prompt)) if random.random() < 0.1]
-        #     if len(mask_indices) > 0:
-        #         encoder_hidden_states[mask_indices] = 0
-        #the above is cfg masking, not sure if it is needed here
-
 
         if validation_mode:
             timesteps = (self.noise_scheduler.num_train_timesteps//2) * torch.ones((bsz,), dtype=torch.int64, device=device)
@@ -388,8 +425,11 @@ class DiffGarLDM(nn.Module):
         mse_loss = loss
 
         if self.contrastive_loss:
-            contrastive_loss = NTXent(model_pred, target, **self.contrastive_loss_kwargs)
-            loss = mse_loss + contrastive_loss
+            # contrastive_loss = NTXent(model_pred, target, **self.contrastive_loss_kwargs)
+            contrastive_loss = self.contrastive_loss(model_pred, target, step = self.global_step)
+            # contrastive_loss = self.contrastive_loss(model_pred, model_pred, step = self.global_step)
+            loss = mse_loss + contrastive_loss * self.contrastive_loss.weight
+            
             
         loss_dict = {
             'mse_loss': mse_loss,
@@ -603,6 +643,8 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
         
         for key in loss_dict:
             self.log(f'train_{key}', loss_dict[key], on_step=True, on_epoch=True, prog_bar=True)
+        
+        self.log('contrastive_loss_weight', self.contrastive_loss.weight, on_step=True, on_epoch=False, prog_bar=True)
         
         # log the learning rate
         self.log('learning_rate', self.trainer.optimizers[0].param_groups[0]['lr'], on_step=True, on_epoch=False, prog_bar=True)

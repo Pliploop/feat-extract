@@ -47,7 +47,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.5
+    weight: 0.1
   encoder_pair_kwargs:
     enable_fusion: false
     amodel: HTSAT-base
@@ -55,7 +55,7 @@ model:
   encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
   text_encoder: T5
   text_encoder_kwargs:
-    model_name: google/flan-t5-small
+    model_name: google/flan-t5-base
   unet_model_config:
     name: base
     dim: 1
@@ -95,7 +95,7 @@ data:
     csv_path: s3://maml-aimcdt/datasets/upmm/upmm_captions.csv
   preextracted_features: true
   truncate_preextracted: 64
-  batch_size: 32
+  batch_size: 64
   num_workers: 4
   # root_dir: /import/research_c4dm/jpmg86/song-describer/data/audio
   # root_dir: /import/research_c4dm/jpmg86/song-describer/data/npy

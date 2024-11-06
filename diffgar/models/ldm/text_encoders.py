@@ -1,5 +1,6 @@
 from transformers import AutoTokenizer, AutoModel, T5Tokenizer, T5EncoderModel
 from torch import nn
+import torch
 
 class T5TextEncoder(nn.Module):
     
@@ -10,6 +11,7 @@ class T5TextEncoder(nn.Module):
         self.max_length = 77
         print('T5TextEncoder initialized')
     
+    @torch.no_grad()
     def get_text_embedding(self, text, return_dict = True, return_tokenizer_only = False, **kwargs):
         text_input = self.tokenizer(text, return_tensors = 'pt', padding = True, truncation = True, max_length = self.max_length)
             
@@ -26,3 +28,5 @@ class T5TextEncoder(nn.Module):
             text_input = text_embed
         
         return text_input
+    
+    

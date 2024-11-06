@@ -51,7 +51,7 @@ model:
   encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
   text_encoder: T5
   text_encoder_kwargs:
-    model_name: google/flan-t5-small
+    model_name: google/flan-t5-base
   unet_model_config:
     name : large
     dim: 1
@@ -64,7 +64,7 @@ model:
     cross_attentions: [0, 0, 1, 1]
     attention_features: 768
     attention_heads: 8
-    embedding_features: 512
+    embedding_features: 768
     use_classifier_free_guidance: True
     embedding_max_length: 77
     resnet_groups :  2
@@ -74,7 +74,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.5
+    weight: 0.1
   optimizer: 
     class_path: torch.optim.AdamW
     init_args:

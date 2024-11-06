@@ -263,10 +263,14 @@ def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_fea
         all_metrics.update({
             key : retrieval_metrics
         })
+        
+    out_ = {
+        'gt_audio': audio_embeds,
+        'gt_text': text_embeds,
+        'pred_audio': preds,
+    }
 
-
-    print(json.dumps(all_metrics, indent=4))
-    return all_metrics, clap_sims
+    return all_metrics, clap_sims, out_
 
 
 def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs):

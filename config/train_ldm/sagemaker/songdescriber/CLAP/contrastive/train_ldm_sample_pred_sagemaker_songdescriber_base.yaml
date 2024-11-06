@@ -54,7 +54,7 @@ model:
   contrastive_loss: true
   contrastive_loss_kwargs:
     temperature: 0.1
-    weight: 0.5
+    weight: 0.1
   # text_encoder: T5
   # text_encoder_kwargs:
   #   model_name: google/flan-t5-base

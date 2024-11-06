@@ -11,12 +11,14 @@ import pickle
 import wandb
 
 
-def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
+def load_model_and_dataset_eval(model_name, model_step, task, device='cuda:4'):
+
+    model_step = model_step if model_step is not None else 100000
 
     path = f's3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints/{model_name}'
     experiment_name = path.split('/')[-1]
     config_path = path + '/config.yaml'
-    ckpt_path = path + '/checkpoint-step=100000-recent.ckpt'
+    ckpt_path = path + f'/checkpoint-step={model_step}-recent.ckpt'
 
     # get the config from wandb
     api = wandb.Api()
@@ -61,6 +63,7 @@ def load_model_and_dataset_eval(model_name, task, device='cuda:4'):
         }
     }
 
+    print(ckpt_path)
     model = DiffGarLDM.from_pretrained(config_path, ckpt_path, device=device)
 
     latent_dm = TextAudioDataModule(
@@ -107,6 +110,7 @@ def log_results(data_dict, experiment_config=None, experiment_name=None, task=No
         'model_scale': training_config['model']['unet_model_config']['name'],
         'training_encoder_pair': training_config['model']['encoder_pair'],
         'text_encoder': training_config['model'].get('text_encoder', None),
+        'contrastive_loss_weight': training_config['model'].get('contrastive_loss_kwargs', {}).get('weight', None),
     }
 
     config_copy = config.copy()
@@ -152,21 +156,25 @@ def log_results(data_dict, experiment_config=None, experiment_name=None, task=No
     return config_copy
 
 
-def run_eval(guidance_scales, model_names, task, log=True, device='cuda:4', distance='cosine', num_samples_per_prompt=[1], limit_n=None):
+def run_eval(guidance_scales, model_names,  model_steps, task, log=True, device='cuda:4', distance='cosine', num_samples_per_prompt=[1], limit_n=None):
 
     metrics = []
     sims = []
+    out = []
+    
+    if model_steps is None:
+        model_steps = [None] * len(model_names)
 
-    for model_name in model_names:
+    for model_name, model_step in zip(model_names, model_steps):
         model, dataset, experiment_name, config = load_model_and_dataset_eval(
-            model_name, task, device=device)
+            model_name, model_step, task, device=device)
 
         limit_n = limit_n if limit_n is not None else len(dataset)
 
         for guidance_scale in guidance_scales:
             for num_samples_per_prompt in num_samples_per_prompt:
                 try:
-                    metrics_, sims_ = eval_dataset(model, dataset, limit_n=limit_n, disable_progress=True, num_steps=50, strict_retrieval=True,
+                    metrics_, sims_, out_ = eval_dataset(model, dataset, limit_n=limit_n, disable_progress=True, num_steps=50, strict_retrieval=True,
                                                    guidance_scale=guidance_scale, distance=distance, num_samples_per_prompt=num_samples_per_prompt)
                     metrics_ = log_results(metrics_, experiment_config=config, experiment_name=experiment_name,
                                                task=task, guidance_scale=guidance_scale, log=log, num_samples_per_prompt=num_samples_per_prompt)
@@ -176,13 +184,14 @@ def run_eval(guidance_scales, model_names, task, log=True, device='cuda:4', dist
                     config_copy = metrics_.copy()
                     config_copy.pop('metrics')
                     sims.append({**config_copy, 'sims': sims_})
+                    out.append({**config_copy, 'out': out_})
 
                 except Exception as e:
                     print(
                         f'Failed to evaluate {model_name} with guidance_scale {guidance_scale} and task {task}')
                     print(e)
 
-    return metrics, sims
+    return metrics, sims, out
 
 
 
@@ -218,14 +227,23 @@ def update_pickle_file(file_path, task, model_name, sims_):
     with open(file_path, 'wb') as f:
         pickle.dump(data, f)
 
+
+
 if __name__ == '__main__':
     
     #get the device from the command line --device argument
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda:7')
+    parser.add_argument('--save', type=bool, default=False)
+    parser.add_argument('--log', type=bool, default=False)
+    parser.add_argument('--file-postfix', type=str, default='')
     args = parser.parse_args()
     device = args.device
+    save = args.save
+    log = args.log
+    file_postfix = args.file_postfix
+    
     
     print(f'Running on device {device}')
     
@@ -337,8 +355,8 @@ if __name__ == '__main__':
     }
 
     tasks = [
-        'song_describer',
-        # 'musiccaps'
+        # 'song_describer',
+        'musiccaps'
     ]
 
     # get all the experiments from the dict and build a model_names list
@@ -358,17 +376,26 @@ if __name__ == '__main__':
 
     metrics = {}
     sims = {}
+    out = {}
     
     model_names = [
-        'creepy-ripple-159',
-        'firm-frog-157',
-        'rural-haze-156',
-        'good-brook-155',
-        'eternal-flower-154',
-        'lucky-thunder-151',
-        'peachy-bee-145',
-        'curious-elevator-143'
+        # 'northern-wind-189',
+        # 'scarlet-wood-188',
+        # 'vital-music-185',
+        # 'diffgar-training-2024-11-01-00-36-02-1azk3r-ip-10-0-65-134.ec2.internal',
+        # 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal',
+        # 'diffgar-training-2024-11-05-00-15-17-vkwyze-ip-10-0-130-95.ec2.internal',
+        # 'diffgar-training-2024-11-05-00-26-12-9webjr-ip-10-2-83-252.ec2.internal',
+        # 'diffgar-training-2024-11-05-11-08-04-k7hzvp-ip-10-0-106-141.ec2.internal'
+        'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'
+        # 'fresh-cherry-187',
+        
     ]
+
+    model_steps = [
+        100000,
+        # 75000
+    ] 
 
     # guidance_scales = [0,0.1,0.3,0.5,1,5,10]
     guidance_scales = [
@@ -380,53 +407,56 @@ if __name__ == '__main__':
         # 20,
         # 100
     ]
-
-    for model_name in model_names:
-        for task in tasks:
-            # try:
-            metrics_, sims_ = run_eval(
-                num_samples_per_prompt=num_samples_per_prompt,
-                guidance_scales=guidance_scales,
-                model_names=[model_name],
-                task=task,
-                log=False,
-                device=device,
-                distance='cosine',
-                limit_n=None
-            )
-            if task not in metrics:
-                metrics[task] = {
-                    model_name: metrics_
-                }
-            else:
-                metrics[task].update({
-                    model_name: metrics_
-                })
-            
-            if task not in sims:
-                sims[task] = {
-                    model_name: sims_
-                }
-            else:
-                sims[task].update({
-                    model_name: sims_
-                })
-
-
-            json_path = f'results/metrics_{task}_contrastive.json'
-            pickle_path = f'results/sims_{task}_contrastive.pkl'
-
-            update_json_file(json_path, task, model_name, metrics_)
-            update_pickle_file(pickle_path, task, model_name, sims_)
-
-            # except Exception as e:
-            #     print(
-            #         f'Failed to evaluate {model_name} with task {task} and num_samples_per_prompt {num_samples_per_prompt}')
-            #     print(e)
-            #     raise 
+    for task in tasks:
+        for i, model_name in enumerate(model_names):
+                # try:
+                metrics_, sims_, out_ = run_eval(
+                    num_samples_per_prompt=num_samples_per_prompt,
+                    guidance_scales=guidance_scales,
+                    model_names=[model_name],
+                    model_steps = [model_steps[i]],
+                    task=task,
+                    log=log,
+                    device=device,
+                    distance='cosine',
+                    limit_n=None
+                )
+                
+                print(json.dumps(metrics_, indent=2))
+                
+                if task not in metrics:
+                    metrics[task] = {
+                        model_name: metrics_
+                    }
+                else:
+                    metrics[task].update({
+                        model_name: metrics_
+                    })
+                
+                if task not in sims:
+                    sims[task] = {
+                        model_name: sims_
+                    }
+                else:
+                    sims[task].update({
+                        model_name: sims_
+                    })
 
 
-    
-    # save sims as pkl
-    
-        
+                if task not in out:
+                    out[task] = {
+                        model_name: out_
+                    }
+                else:
+                    out[task].update({
+                        model_name: out_
+                    })
+
+                json_path = f'results/{task}/metrics{file_postfix}.json'
+                pickle_path = f'results/{task}/sims{file_postfix}.pkl'
+                embedding_path = f'results/{task}/embeddings{file_postfix}.pkl'
+
+                update_json_file(json_path, task, model_name, metrics_) if save else None
+                update_pickle_file(pickle_path, task, model_name, sims_) if save else None
+                update_pickle_file(embedding_path, task, model_name, out_) if save else None
+

@@ -51,7 +51,7 @@ model:
   encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
   text_encoder: T5
   text_encoder_kwargs:
-    model_name: google/flan-t5-small
+    model_name: google/flan-t5-base
   unet_model_config:
     name: xlarge
     dim: 1
