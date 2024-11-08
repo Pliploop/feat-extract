@@ -17,6 +17,7 @@ def load_model_and_dataset_eval(model_name, model_step, task, device='cuda:4'):
 
     path = f's3://maml-aimcdt/storage/julien/DiffGAR/training_checkpoints/{model_name}'
     experiment_name = path.split('/')[-1]
+    print(experiment_name)
     config_path = path + '/config.yaml'
     ckpt_path = path + f'/checkpoint-step={model_step}-recent.ckpt'
 
@@ -355,8 +356,8 @@ if __name__ == '__main__':
     }
 
     tasks = [
-        # 'song_describer',
-        'musiccaps'
+        'song_describer',
+        # 'musiccaps'
     ]
 
     # get all the experiments from the dict and build a model_names list
@@ -379,22 +380,15 @@ if __name__ == '__main__':
     out = {}
     
     model_names = [
-        # 'northern-wind-189',
-        # 'scarlet-wood-188',
-        # 'vital-music-185',
-        # 'diffgar-training-2024-11-01-00-36-02-1azk3r-ip-10-0-65-134.ec2.internal',
-        # 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal',
-        # 'diffgar-training-2024-11-05-00-15-17-vkwyze-ip-10-0-130-95.ec2.internal',
-        # 'diffgar-training-2024-11-05-00-26-12-9webjr-ip-10-2-83-252.ec2.internal',
-        # 'diffgar-training-2024-11-05-11-08-04-k7hzvp-ip-10-0-106-141.ec2.internal'
-        'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'
-        # 'fresh-cherry-187',
-        
+        # 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal',
+        # 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'
+        'glad-disco-215',
+        'unique-galaxy-214',
     ]
 
     model_steps = [
         100000,
-        # 75000
+        100000,
     ] 
 
     # guidance_scales = [0,0.1,0.3,0.5,1,5,10]
@@ -403,7 +397,8 @@ if __name__ == '__main__':
     ]
     num_samples_per_prompt = [
         # 1,
-        5,
+        # 5,
+        10,
         # 20,
         # 100
     ]

@@ -28,7 +28,7 @@ MANIFEST
 
 /homes/jpmg86/Diff-GAR/diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt
 data/*
-results/*
+results
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

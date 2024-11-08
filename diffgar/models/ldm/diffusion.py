@@ -212,7 +212,7 @@ class DiffGarLDM(nn.Module):
         if self.train_slider_concept:
             self.slider = Slider(text_dim)
             
-            
+        self.contrastive_loss = None
         if contrastive_loss:
             self.contrastive_loss = NTXent(**contrastive_loss_kwargs)
         
@@ -644,7 +644,7 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
         for key in loss_dict:
             self.log(f'train_{key}', loss_dict[key], on_step=True, on_epoch=True, prog_bar=True)
         
-        self.log('contrastive_loss_weight', self.contrastive_loss.weight, on_step=True, on_epoch=False, prog_bar=True)
+        self.log('contrastive_loss_weight', self.contrastive_loss.weight, on_step=True, on_epoch=False, prog_bar=True) if self.contrastive_loss else None
         
         # log the learning rate
         self.log('learning_rate', self.trainer.optimizers[0].param_groups[0]['lr'], on_step=True, on_epoch=False, prog_bar=True)
