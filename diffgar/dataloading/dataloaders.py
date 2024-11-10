@@ -97,9 +97,10 @@ def get_upmm_annotations(data_path = None, csv_path = None):
 def get_folder_annotations(data_path = None):
     
     # recursively get all files in the data_path directory that are audio files, and their paths
+    audio_files = []
     
     for root, dirs, files in os.walk(data_path):
-        audio_files = [os.path.join(root, file) for file in files if file.endswith('.wav') or file.endswith('.mp3')]
+        audio_files += [os.path.join(root, file) for file in files if file.endswith('.wav') or file.endswith('.mp3')]
         
     records = [{'file_path': file, 'caption': '', 'split': 'train'} for file in audio_files]
     

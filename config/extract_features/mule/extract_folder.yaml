@@ -41,29 +41,26 @@ trainer:
   reload_dataloaders_every_n_epochs: 0
   default_root_dir: null
 model:
-  encoder_pair: clap
+  encoder_pair: muleT5
   scheduler_name: cvssp/audioldm2
   scheduler_pred_type: sample
   encoder_pair_kwargs:
-    enable_fusion: false
-    amodel: HTSAT-base
-    device: cpu #just for init then sent to the right device
-  encoder_pair_ckpt: 'diffgar/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
+    audio_encoder_ckpt: s3://maml-aimcdt/storage/julien/MuLOOC/training/jolly-sea-105/checkpoint-step=200000-recent.ckpt
   preextracted_latents: true
 data:
-  task: 'upmm'
+  task: null
   task_kwargs:
     data_path: /opt/ml/processing/input
-    csv_path: s3://maml-aimcdt/datasets/upmm/upmm_small/upmm_captions_small.csv
   preextracted_features: false
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
-save_dir: /opt/ml/processing/output/npy/1hz
+  target_sr: 16000
+  target_n_samples: 47999
+save_dir: /opt/ml/processing/output/1hz
 root_path: /opt/ml/processing/input
-extract_method: get_audio_embedding_from_data
-out_key: embedding_proj
-hop: 48000
+extract_method: extract_features
+out_key: projected_normalized
+hop: 16000
 limit_n: null
-save: true
-
+save: false
