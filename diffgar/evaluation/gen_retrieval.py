@@ -13,6 +13,7 @@ def generate_from_prompts(model, prompts, **kwargs):
 
 
 def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
+    
 
     prompt = datum['prompt']
 
@@ -21,6 +22,7 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
     audio = datum.get('audio', None)
 
     text_embeds = model.encoder_pair.get_text_embedding(prompt)
+    # print(text_embeds)
     audio = audio if preextracted_features else model.encoder_pair.get_audio_embedding_from_data(audio)
 
     audio = torch.stack(audio) if isinstance(audio, list) else audio
@@ -32,8 +34,7 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
     
     preds = preds.transpose(-1, -2)
     
-    preds = preds.mean(dim=0, keepdim=True)
-    
+    # preds = preds.mean(dim=0, keepdim=True)
     
     
 
@@ -97,7 +98,7 @@ def compute_sims(text_embeds, audio_embeds, preds, distance='cosine'):
     # retrieve_gt_audio_from_pred_text = audio_embeds @ audio_embeds.t()
 
     
-    print(f"retrieve_gt_audio_from_pred_text: {retrieve_gt_audio_from_pred_text.shape}")
+    # print(f"retrieve_gt_audio_from_pred_text: {retrieve_gt_audio_from_pred_text.shape}")
 
 
     
@@ -108,8 +109,8 @@ def compute_sims(text_embeds, audio_embeds, preds, distance='cosine'):
         'retrieve_gt_audio_from_pred_text': retrieve_gt_audio_from_pred_text
     }
 
-    for k, v in out_.items():
-        print(f"{k}: {v.shape}") if v is not None else None
+    # for k, v in out_.items():
+    #     print(f"{k}: {v.shape}") if v is not None else None
 
     return out_
 
@@ -230,13 +231,16 @@ def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_fea
     audio_embeds, text_embeds, preds, file_idx = out_['audio_embeds'], out_[
         'text_embeds'], out_['preds'], out_['file_idx']
 
+
     audio_embeds = torch.stack(audio_embeds).cpu()
     text_embeds = torch.cat(text_embeds).cpu()
     
-    preds = torch.cat(preds).cpu()
-
-    sims_dict = compute_sims(text_embeds, audio_embeds, preds, distance=distance)
-    clap_sims = compute_sims(text_embeds, audio_embeds, preds, distance='cosine')
+    
+    preds = torch.stack(preds).cpu()
+    preds_ = preds.mean(dim=1, keepdim=False)
+    
+    sims_dict = compute_sims(text_embeds, audio_embeds, preds_, distance=distance)
+    clap_sims = compute_sims(text_embeds, audio_embeds, preds_, distance='cosine')
     
     
     clap_score = compute_clap_score(clap_sims)
@@ -293,7 +297,13 @@ def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs
         
         text_embeds.append(
             embeddings_and_preds['text_embeds'].get('projected_pooler_output',torch.zeros(1,1)))
+        
         preds.append(embeddings_and_preds['preds'])
+        
+        print(f'text_embeds: {text_embeds[-1].shape}')
+        print(f'audio_embeds: {audio_embeds[-1].shape}')
+        print(f'preds: {preds[-1].shape}')
+        
         file_idx.append(datum['file_idx'])
         
     

@@ -22,6 +22,7 @@ import yaml
 
 from diffgar.models.clap.src.laion_clap import CLAP_Module
 from diffgar.models.muleT5.muleT5 import MuleT5EncoderPair
+from diffgar.models.muscall.muscall.models.muscall import MusCALL
 
 def get_encoder_pair(encoder_pair, encoder_pair_kwargs=None):
     
@@ -29,6 +30,8 @@ def get_encoder_pair(encoder_pair, encoder_pair_kwargs=None):
         return CLAP_Module(**encoder_pair_kwargs)
     elif encoder_pair == "muleT5":
         return MuleT5EncoderPair(**encoder_pair_kwargs)
+    elif encoder_pair == "MusCALL":
+        return MusCALL.from_pretrained(**encoder_pair_kwargs)
     
 def get_text_encoder(text_encoder, text_encoder_kwargs=None):
     if text_encoder == 'T5':

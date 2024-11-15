@@ -20,6 +20,8 @@ def load_model_and_dataset_eval(model_name, model_step, task, device='cuda:4'):
     print(experiment_name)
     config_path = path + '/config.yaml'
     ckpt_path = path + f'/checkpoint-step={model_step}-recent.ckpt'
+    
+    print(ckpt_path)
 
     # get the config from wandb
     api = wandb.Api()
@@ -34,22 +36,26 @@ def load_model_and_dataset_eval(model_name, model_step, task, device='cuda:4'):
     encoder_pair_to_new_dir = {
         'song_describer': {
             'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/muleproj/npy/1hz',
-            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/clap/npy'
+            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/clap/npy',
+            'MusCALL': '/import/research_c4dm/jpmg86/song-describer/data/muscall/npy/1hz'
         },
         'musiccaps': {
             'muleT5':   '/import/research_c4dm/jpmg86/musiccaps/mule_npy/1hz',
-            'clap':    '/import/research_c4dm/jpmg86/musiccaps/clap_npy/1hz'
+            'clap':    '/import/research_c4dm/jpmg86/musiccaps/clap_npy/1hz',
+            'MusCALL': '/import/research_c4dm/jpmg86/musiccaps/muscall_npy/1hz'
         }
     }
 
     encoder_pair_to_old_dir = {
         'song_describer': {
             'muleT5':   '/import/research_c4dm/jpmg86/song-describer/data/audio',
-            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/audio'
+            'clap':    '/import/research_c4dm/jpmg86/song-describer/data/audio',
+            'MusCALL': '/import/research_c4dm/jpmg86/song-describer/data/audio'
         },
         'musiccaps': {
             'muleT5':   '/import/c4dm-datasets/musiccaps/musiccaps_10s',
-            'clap':    '/import/c4dm-datasets/musiccaps/musiccaps_10s'
+            'clap':    '/import/c4dm-datasets/musiccaps/musiccaps_10s',
+            'MusCALL': '/import/c4dm-datasets/musiccaps/musiccaps_10s'
         }
     }
     
@@ -87,7 +93,7 @@ def load_model_and_dataset_eval(model_name, model_step, task, device='cuda:4'):
     return model, dataset, experiment_name, config
 
 
-def log_results(data_dict, experiment_config=None, experiment_name=None, task=None, guidance_scale=None, log=False, num_samples_per_prompt=None, ks=[1, 3, 5, 10]):
+def log_results(data_dict, experiment_config=None, experiment_name=None, task=None, guidance_scale=None, log=False, num_samples_per_prompt=None, ks=[1, 3, 5, 10], training_steps=None):
     # Extract CLAP scores from 'diagonals' and 'averages' into a DataFrame
 
     training_guidance = experiment_config['model']['unet_model_config'].get(
@@ -103,6 +109,7 @@ def log_results(data_dict, experiment_config=None, experiment_name=None, task=No
         'training_guidance': training_guidance,
         'inference_guidance': inference_guidance,
         'task': task,
+        'training_steps': training_steps,
         'experiment_name': experiment_name,
         'num_samples_per_prompt': num_samples_per_prompt,
         'original_name': original_name,
@@ -178,9 +185,9 @@ def run_eval(guidance_scales, model_names,  model_steps, task, log=True, device=
                     metrics_, sims_, out_ = eval_dataset(model, dataset, limit_n=limit_n, disable_progress=True, num_steps=50, strict_retrieval=True,
                                                    guidance_scale=guidance_scale, distance=distance, num_samples_per_prompt=num_samples_per_prompt)
                     metrics_ = log_results(metrics_, experiment_config=config, experiment_name=experiment_name,
-                                               task=task, guidance_scale=guidance_scale, log=log, num_samples_per_prompt=num_samples_per_prompt)
+                                               task=task, guidance_scale=guidance_scale, log=log, num_samples_per_prompt=num_samples_per_prompt,training_steps=model_step)
                     
-                    
+                    print(json.dumps(metrics_, indent=4))
                     metrics.append(metrics_)
                     config_copy = metrics_.copy()
                     config_copy.pop('metrics')
@@ -256,12 +263,17 @@ if __name__ == '__main__':
                     # 'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-59-43-7lnzqj-ip-10-2-239-154.ec2.internal'},
                     # 'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-09-15-32-35-9ngrhp-ip-10-0-73-91.ec2.internal'},
                     # 'MULET5': {'model_name': 'diffgar-training-2024-10-22-23-39-20-2xguwt-ip-10-2-125-92.ec2.internal'},
+                    # 'MUSCALL': {'model_name': ''},
+                    # 'MUSCALLT5': {'model_name': ''},
                 },
                 'song_describer': {
-                    'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
-                    'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
-                    'MULET5': {'model_name': 'diffgar-training-2024-10-23-10-24-58-ecrjda-ip-10-2-200-242.ec2.internal'},
+                    # 'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
+                    # 'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
+                    # 'MULET5': {'model_name': 'diffgar-training-2024-10-23-10-24-58-ecrjda-ip-10-2-200-242.ec2.internal'},
+                    # 'MUSCALL': {'model_name': 'upbeat-elevator-230'},
+                    # 'MUSCALLT5': {'model_name': ''},
                 }
+                
             }
         },
         'model_scale': {
@@ -274,33 +286,57 @@ if __name__ == '__main__':
                         # 'tiny' : {'model_name' : ''},
                     },
                     'CLAPCLAP': {
-                        # 'xlarge': {'model_name': 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal'},
-                        # 'large': {'model_name': 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal'},
-                        # 'small': {'model_name': 'diffgar-training-2024-10-09-15-17-25-8sarg2-ip-10-0-206-118.ec2.internal'},
-                        # 'tiny': {'model_name': 'diffgar-training-2024-10-09-16-00-15-1y2807-ip-10-2-224-244.ec2.internal'},
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-09-15-17-25-8sarg2-ip-10-0-206-118.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-09-16-00-15-1y2807-ip-10-2-224-244.ec2.internal'},
 
                     },
                     'MULET5': {
-                        # 'xlarge': {'model_name': 'diffgar-training-2024-10-23-01-08-58-gr6g8k-ip-10-0-125-16.ec2.internal'},
-                        # 'large': {'model_name': 'diffgar-training-2024-10-23-00-57-51-azhmyc-ip-10-0-180-242.ec2.internal'},
-                        # 'small': {'model_name': 'diffgar-training-2024-10-23-00-41-42-vra4x4-ip-10-2-91-162.ec2.internal'},
-                        # 'tiny': {'model_name': 'diffgar-training-2024-10-23-00-07-24-e4fja8-ip-10-2-221-193.ec2.internal'},
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-23-01-08-58-gr6g8k-ip-10-0-125-16.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-23-00-57-51-azhmyc-ip-10-0-180-242.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-23-00-41-42-vra4x4-ip-10-2-91-162.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-23-00-07-24-e4fja8-ip-10-2-221-193.ec2.internal'},
+                    },
+                    'MUSCALL': {
+                        # 'xlarge': {'model_name': ''},
+                        # 'large': {'model_name': ''},
+                        # 'small': {'model_name': ''},
+                        # 'tiny': {'model_name': ''},
+                    },
+                    'MUSCALLT5': {
+                        # 'xlarge': {'model_name': ''},
+                        # 'large': {'model_name': ''},
+                        # 'small': {'model_name': ''},
+                        # 'tiny': {'model_name': ''},
                     },
                 },
                 'song_describer': {
                     'CLAPT5': {
                         # 'xlarge' : {'model_name' : ''},
                         # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'smooth-lake-225'},
+                        'tiny' : {'model_name' : 'breezy-wind-226'},
+                    },
+                    'CLAPCLAP': {
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'}
+                    },
+                    'MULET5': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'trim-sunset-227'},
+                        'tiny' : {'model_name' : 'rare-blaze-228'},
+                    },
+                    'MUSCALL': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
                         # 'small' : {'model_name' : ''},
                         # 'tiny' : {'model_name' : ''},
                     },
-                    'CLAPCLAP': {
-                        # 'xlarge': {'model_name': 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal'},
-                        # 'large': {'model_name': 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal'},
-                        # 'small': {'model_name': 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'},
-                        # 'tiny': {'model_name': 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'}
-                    },
-                    'MULET5': {
+                    'MUSCALLT5': {
                         # 'xlarge' : {'model_name' : ''},
                         # 'large' : {'model_name' : ''},
                         # 'small' : {'model_name' : ''},
@@ -309,50 +345,6 @@ if __name__ == '__main__':
                 },
             },
         },
-        # 'guidance' : {
-        #     'task' : {
-        #         'upmm' : {
-        #             'CLAPT5' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #             'CLAPCLAP' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #             'MULET5' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #         },
-        #         'song_describer' : {
-        #             'CLAPT5' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #             'CLAPCLAP' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #             'MULET5' : {
-        #                 '0' : '',
-        #                 '0.3' : '',
-        #                 '0.5' : '',
-        #                 '1' : '',
-        #             },
-        #         },
-        #     },
-        # },
     }
 
     tasks = [
@@ -379,16 +371,12 @@ if __name__ == '__main__':
     sims = {}
     out = {}
     
-    model_names = [
-        # 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal',
-        # 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'
-        'glad-disco-215',
-        'unique-galaxy-214',
-    ]
+    # model_names = [
+    #     # 'upbeat-elevator-230'
+    # ]
 
     model_steps = [
-        100000,
-        100000,
+        [5000,10000,15000,20000,50000,100000] for _ in model_names
     ] 
 
     # guidance_scales = [0,0.1,0.3,0.5,1,5,10]
@@ -396,62 +384,72 @@ if __name__ == '__main__':
         3
     ]
     num_samples_per_prompt = [
-        # 1,
-        # 5,
+        1,
+        5,
         10,
-        # 20,
-        # 100
+        20,
+        100
     ]
     for task in tasks:
         for i, model_name in enumerate(model_names):
-                # try:
-                metrics_, sims_, out_ = run_eval(
-                    num_samples_per_prompt=num_samples_per_prompt,
-                    guidance_scales=guidance_scales,
-                    model_names=[model_name],
-                    model_steps = [model_steps[i]],
-                    task=task,
-                    log=log,
-                    device=device,
-                    distance='cosine',
-                    limit_n=None
-                )
-                
-                print(json.dumps(metrics_, indent=2))
-                
-                if task not in metrics:
-                    metrics[task] = {
-                        model_name: metrics_
-                    }
-                else:
-                    metrics[task].update({
-                        model_name: metrics_
-                    })
-                
-                if task not in sims:
-                    sims[task] = {
-                        model_name: sims_
-                    }
-                else:
-                    sims[task].update({
-                        model_name: sims_
-                    })
+                # try:  
+                for model_steps_ in model_steps[i]:
+                    ## check if the experiment is in the json file
+                    with open(f'results/{task}/metrics{file_postfix}.json', 'r') as f:
+                        data = json.load(f)
+                        
+                    # if the task is not present or the model is not present
+                    if task not in data.keys() or model_name not in data.get(task, {}).keys():
+                        try:
+                            metrics_, sims_, out_ = run_eval(
+                                num_samples_per_prompt=num_samples_per_prompt,
+                                guidance_scales=guidance_scales,
+                                model_names=[model_name],
+                                model_steps = [model_steps_],
+                                task=task,
+                                log=log,
+                                device=device,
+                                distance='cosine',
+                                limit_n=None
+                            )
+                            model_name_ = model_name+'-'+str(model_steps_)+'-steps'
+                            
+                            
+                            if task not in metrics:
+                                metrics[task] = {
+                                    model_name_: metrics_
+                                }
+                            else:
+                                metrics[task].update({
+                                    model_name_: metrics_
+                                })
+                            
+                            if task not in sims:
+                                sims[task] = {
+                                    model_name_: sims_
+                                }
+                            else:
+                                sims[task].update({
+                                    model_name_: sims_
+                                })
 
 
-                if task not in out:
-                    out[task] = {
-                        model_name: out_
-                    }
-                else:
-                    out[task].update({
-                        model_name: out_
-                    })
+                            if task not in out:
+                                out[task] = {
+                                    model_name_: out_
+                                }
+                            else:
+                                out[task].update({
+                                    model_name_: out_
+                                })
 
-                json_path = f'results/{task}/metrics{file_postfix}.json'
-                pickle_path = f'results/{task}/sims{file_postfix}.pkl'
-                embedding_path = f'results/{task}/embeddings{file_postfix}.pkl'
+                            json_path = f'results/{task}/metrics{file_postfix}.json'
+                            pickle_path = f'/import/research_c4dm/jpmg86/DiffGAR/results/{task}/sims{file_postfix}.pkl'
+                            embedding_path = f'/import/research_c4dm/jpmg86/DiffGAR/results/{task}/embeddings{file_postfix}.pkl'
 
-                update_json_file(json_path, task, model_name, metrics_) if save else None
-                update_pickle_file(pickle_path, task, model_name, sims_) if save else None
-                update_pickle_file(embedding_path, task, model_name, out_) if save else None
-
+                            update_json_file(json_path, task, model_name_, metrics_) if save else None
+                            update_pickle_file(pickle_path, task, model_name_, sims_) if save else None
+                            update_pickle_file(embedding_path, task, model_name_, out_) if save else None
+                        except Exception as e:
+                            print(f'Failed to evaluate {model_name} with task {task}')
+                            print(e)

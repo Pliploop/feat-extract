@@ -22,6 +22,7 @@ class T5TextEncoder(nn.Module):
             
         text_embed = self.encoder(input_ids = text_input['input_ids'].to(device), attention_mask = text_input['attention_mask'].to(device))
             
+            
         if return_dict:
             text_input.update(text_embed)
         else:

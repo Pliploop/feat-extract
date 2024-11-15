@@ -95,7 +95,7 @@ if __name__ == "__main__":
                 dirpath=os.path.join(cli.config.ckpt_path, experiment_name),
                 filename='checkpoint-{step}-recent',  # This means all checkpoints are saved, not just the top k
                 every_n_train_steps = 5000,  # Replace with your desired value
-                save_top_k = 1
+                save_top_k = -1
             )
             
     # recent_callback_step = ModelCheckpoint(
