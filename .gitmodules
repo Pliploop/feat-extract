@@ -1,6 +1,8 @@
 [submodule "diffgar/models/clap"]
 	path = diffgar/models/clap
 	url = https://github.com/LAION-AI/CLAP.git
+        ignore = dirty
 [submodule "diffgar/models/muscall"]
 	path = diffgar/models/muscall
 	url = https://github.com/Pliploop/muscall.git
+        ignore = dirty
