@@ -64,7 +64,13 @@ def load_full_audio(path, target_sr, verbose = False):
 def load_full_and_split(path, target_sr, target_n_samples, hop = None, verbose = False):
     hop = target_n_samples if hop is None else hop
     audio = load_full_audio(path, target_sr, verbose=verbose)
-    audio = audio.squeeze()   
+    audio = audio.squeeze()
+    #if audio is shorter than target_n_samples, repeat until it is
+    if audio.shape[0] < target_n_samples:
+        n_repeats = int(np.ceil(target_n_samples / audio.shape[0]))
+        audio = audio.repeat(n_repeats)
+    
     audio = audio.unfold(0, int(target_n_samples), int(hop)).unsqueeze(1)
+    # print(audio.shape)
     print(f'Split audio into {audio.shape[0]} chunks') if verbose else None
     return audio

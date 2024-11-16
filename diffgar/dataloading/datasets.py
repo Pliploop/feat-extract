@@ -167,10 +167,11 @@ class TextAudioDataset(Dataset):
                 item = self.__getitem__(i, return_full_audio = return_full_audio, hop = hop, verbose = verbose)
                 file_path = self.annotations[i]['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
                 
-                audio = item['audio'].squeeze().to(device)
+                audio = item['audio'].squeeze(1).to(device)
                 text = item['prompt']
                 
-                if audio.shape[0] > 200:
+                
+                if audio.shape[0] > 200 :
                     chunks = torch.split(audio, 200, dim=0)
                     chunks = list(chunks)
                     audio_features = []
@@ -188,7 +189,7 @@ class TextAudioDataset(Dataset):
                 yield audio_features, file_path
             except Exception as e:
                 print(f"Error extracting features: {e}")
-                yield None, ''
+                print(e)
         
     def extract_and_save_features(self, model, save_dir = None, extract_method = 'extract_features', extract_kwargs = {}, out_key = 'embedding', hop = None, return_full_audio = True, limit_n = None, save = False, verbose = True, root_path = None):
         

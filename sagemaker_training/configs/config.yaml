@@ -4,7 +4,7 @@ pull_config: s3://maml-aimcdt/storage/julien/DiffGAR/training_configs/config.yam
 training_input:
   # s3_data: s3://maml-aimcdt/datasets/song-describer/data/clap/npy/1hz/
   # s3_data: s3://maml-aimcdt/datasets/song-describer/data/muleproj/npy/1hz/
-  s3_data: s3://maml-aimcdt/datasets/upmm/npy/1hz/
+  # s3_data: s3://maml-aimcdt/datasets/upmm/npy/1hz/
   # s3_data: s3://maml-aimcdt/datasets/upmm/muleproj/npy/1hz/
   s3_data_type: S3Prefix
   distribution: FullyReplicated

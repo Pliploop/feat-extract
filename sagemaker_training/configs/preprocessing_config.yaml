@@ -2,13 +2,13 @@
 base_name: diffgar-extract
 pull_config: s3://maml-aimcdt/storage/julien/DiffGAR/training_configs/preprocessing_config.yaml
 processing_inputs:
-  # - source: s3://maml-ilaria/datasets/uppm_descriptions/audio
+  - source: s3://maml-ilaria/datasets/uppm_descriptions/audio
   # - source: s3://maml-aimcdt/datasets/song-describer/data/audio/
   # - source: s3://maml-datasets/umg-spotify-most-popular-songs/v1.0/audio/
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  # - destination: s3://maml-aimcdt/datasets/upmm/
+  - destination: s3://maml-aimcdt/datasets/upmm/
   # - destination: s3://maml-aimcdt/datasets/song-describer/data/
   # - destination: s3://maml-aimcdt/datasets/spotify_most_popular/MULE_512/
     output_name: npy

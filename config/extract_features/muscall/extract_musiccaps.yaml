@@ -49,9 +49,10 @@ model:
     ckpt_path: s3://maml-aimcdt/storage/julien/MusCALL/best_model.pth.tar
   preextracted_latents: true
 data:
-  task: null
+  task: 'musiccaps'
   task_kwargs:
-    data_path: /opt/ml/processing/input
+    data_path: /import/c4dm-datasets/musiccaps/musiccaps_10s
+    csv_path: /import/c4dm-datasets/musiccaps/musiccaps-public.csv
   preextracted_features: false
   truncate_preextracted: 64
   batch_size: 32
