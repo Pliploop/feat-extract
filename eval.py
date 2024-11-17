@@ -243,14 +243,20 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda:7')
+    parser.add_argument('--save-metrics', type=bool, default=False)
+    parser.agg_argent('--save-sims', type=bool, default=False)
+    parser.add_argument('--save-embeddings', type=bool, default=False)
     parser.add_argument('--save', type=bool, default=False)
     parser.add_argument('--log', type=bool, default=False)
     parser.add_argument('--file-postfix', type=str, default='')
     args = parser.parse_args()
     device = args.device
-    save = args.save
     log = args.log
     file_postfix = args.file_postfix
+    save_metrics, save_sims, save_embeddings, save = args.save_metrics, args.save_sims, args.save_embeddings, args.save
+    if save:
+        save_metrics, save_sims, save_embeddings = True, True, True
+    
     
     
     print(f'Running on device {device}')

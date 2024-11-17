@@ -6,6 +6,7 @@ training_input:
   # s3_data: s3://maml-aimcdt/datasets/song-describer/data/muleproj/npy/1hz/
   # s3_data: s3://maml-aimcdt/datasets/upmm/npy/1hz/
   # s3_data: s3://maml-aimcdt/datasets/upmm/muleproj/npy/1hz/
+  s3_data: s3://maml-aimcdt/datasets/upmm/muscall/npy/1hz/
   s3_data_type: S3Prefix
   distribution: FullyReplicated
   input_mode: File
