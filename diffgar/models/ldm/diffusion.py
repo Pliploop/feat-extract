@@ -676,7 +676,7 @@ class LightningDiffGar(DiffGarLDM,LightningModule):
             
             except Exception as e:
                 print(f"Error computing CLAP score: {e}")
-                pass
+                
             
             audio_to_audio_sims = preds.mean(dim=1) @ latents.mean(dim=1).t()
             audio_to_audio_sims = audio_to_audio_sims.diag().mean()

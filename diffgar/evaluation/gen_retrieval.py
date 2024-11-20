@@ -50,8 +50,39 @@ def get_embeddings_and_preds(model, datum,preextracted_features=True, **kwargs):
 # - predicted audio embedding and ground truth text embeddings
 # - predicted audio embedding and ground truth audio embeddings
 
+def compute_distance(x,y,distance = 'cosine', agg = None):
+    if x.dim() == 3:
+        x_s = []
+        for i in range(x.shape[1]):
+            x_s.append(compute_distance_(x[:,i,:],y,distance=distance))
+        x_s = torch.stack(x_s, dim=1)
+        print(f'COMBINED SIMS: {x_s.shape}')
+        if distance == 'cosine':
+            x_s= x_s.max(dim=1).values if agg == 'max' else x_s.mean(dim=1)
+        elif distance == 'euclidean':
+            x_s = x_s.min(dim=1).values if agg == 'min' else x_s.mean(dim=1)
+        print(f'COMBINED SIMS: {x_s.shape}')
+        return x_s
+    elif x.dim() == 4:
+        ## x is a batch of sequences and B,N,T,D and y is B,T,D
+        ## get the max similarity along T and D axes, into B,B
+        x_s = []
+        for i in range(x.shape[1]):
+            for j in range(x.shape[2]):
+                for k in range(y.shape[1]):
+                    x_s.append(compute_distance_(x[:,i,j,:],y[:,k,:],distance=distance))
+        x_s = torch.stack(x_s, dim=1)
+        print(f'COMBINED SIMS: {x_s.shape}')
+        
+        if distance == 'cosine':
+            x_s= x_s.max(dim=1).values if agg == 'max' else x_s.mean(dim=1)
+        elif distance == 'euclidean':
+            x_s = x_s.min(dim=1).values if agg == 'min' else x_s.mean(dim=1)
+        
+    else:
+        return compute_distance_(x,y,distance=distance)
 
-def compute_distance(x,y, distance='cosine'):
+def compute_distance_(x,y, distance='cosine'):
     
     if distance == 'cosine':
         return x @ y.t()
@@ -61,18 +92,26 @@ def compute_distance(x,y, distance='cosine'):
         raise ValueError(f"Distance {distance} not supported")
 
 
-def compute_sims(text_embeds, audio_embeds, preds, distance='cosine'):
+def compute_sims(text_embeds, audio_embeds, preds, distance='cosine', agg = None):
 
     # print(f"text_embeds: {text_embeds.shape}")
     # print(f"audio_embeds: {audio_embeds.shape}")
     # print(f"preds: {preds.shape}")
     
     
+    print('====BEFORE SIMS=====')
+    print(f"audio_embeds: {audio_embeds.shape}")
+    print(f"preds: {preds.shape}")
     
     
-    audio_embeds = audio_embeds.mean(dim=1)
-    preds = preds.mean(dim=1)
+    audio_embeds = audio_embeds.mean(dim=1) if 'sequence' not in str(agg) else audio_embeds
     
+    if 'sequence' not in str(agg):
+        preds = preds.mean(dim=2) if preds.dim() == 4 else preds.mean(dim=1)
+    
+    print('====AFTER SIMS=====')
+    print(f"audio_embeds: {audio_embeds.shape}")
+    print(f"preds: {preds.shape}")
     # if the embedding dimensions are the same for text embeds and audio embeds, we can compute the similarities directly
 
 
@@ -84,14 +123,14 @@ def compute_sims(text_embeds, audio_embeds, preds, distance='cosine'):
 
         # retrieve_gt_audio_from_gt_text = text_embeds @ audio_embeds.t()
         
-        retrieve_gt_audio_from_gt_text = compute_distance(text_embeds, audio_embeds, distance=distance)
-        retrieve_gt_text_from_gt_audio = compute_distance(audio_embeds, text_embeds, distance=distance)
-        retrieve_gt_text_from_pred_audio = compute_distance(preds, text_embeds, distance=distance)
+        retrieve_gt_audio_from_gt_text = compute_distance(text_embeds, audio_embeds, distance=distance, agg=agg)
+        retrieve_gt_text_from_gt_audio = compute_distance(audio_embeds, text_embeds, distance=distance, agg=agg)
+        retrieve_gt_text_from_pred_audio = compute_distance(preds, text_embeds, distance=distance, agg=agg)
     
     
     else:
-        retrieve_gt_audio_from_gt_text = compute_distance(audio_embeds, audio_embeds, distance=distance)
-    retrieve_gt_audio_from_pred_text = compute_distance(preds, audio_embeds, distance=distance)
+        retrieve_gt_audio_from_gt_text = compute_distance(audio_embeds, audio_embeds, distance=distance, agg=agg)
+    retrieve_gt_audio_from_pred_text = compute_distance(preds, audio_embeds, distance=distance, agg=agg)
     
     #instead of dot-product, we can use cosine similarity
     
@@ -164,14 +203,17 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10],
         metrics['Hit Rate'][k] = 0
     
     ranks_ = []
+    ranks__ = []
 
 
     descending = True if distance in ['cosine'] else False
 
-    
+
     for i in range(query_key_sim.shape[0]):
         ground_truth_idxx = torch.tensor(ground_truth_idx[i]).unsqueeze(-1)
         ranking = torch.argsort(query_key_sim[i], descending=descending)
+        
+        
         # print(f"ranking: {ranking}")
         # print(f"ground_truth_idxx: {ground_truth_idxx}")
         
@@ -180,6 +222,7 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10],
 
         # Rank Metrics
         ranks_.append(ranks)
+        ranks__.append(ranking.cpu())
         
         # Precision, Recall, and mAP
         for k in ks:
@@ -209,16 +252,18 @@ def compute_retrieval_metrics(query_key_sim, ground_truth_idx, ks=[1, 3, 5, 10],
         if key not in ['mean_rank', 'median_rank']:
             for k in ks:
                 metrics[key][k] /= num_queries
+    
                 
-    return metrics
+    return metrics, ranks__
 
 
 @torch.no_grad()
-def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_features=True, strict_retrieval = False, **kwargs):
+def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_features=True, strict_retrieval = False, agg = None, **kwargs):
 
     model.eval()
 
     all_metrics = {}
+    all_caption_retrieval = {}
 
     out_ = pred_dataset(
         model=model,
@@ -239,8 +284,11 @@ def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_fea
     preds = torch.stack(preds).cpu()
     preds_ = preds.mean(dim=1, keepdim=False)
     
-    sims_dict = compute_sims(text_embeds, audio_embeds, preds_, distance=distance)
+    
+    
+    sims_dict = compute_sims(text_embeds, audio_embeds, preds_, distance=distance) if agg is None else agg(text_embeds, audio_embeds, preds, distance=distance, agg=agg)
     clap_sims = compute_sims(text_embeds, audio_embeds, preds_, distance='cosine')
+    
     
     
     clap_score = compute_clap_score(clap_sims)
@@ -262,10 +310,28 @@ def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_fea
         }
         
     for key in to_compute_.keys():
-        retrieval_metrics = compute_retrieval_metrics(to_compute_[key], file_idx, ks=[1, 3, 5, 10], distance=distance)
+        retrieval_metrics, ranking = compute_retrieval_metrics(to_compute_[key], file_idx, ks=[1, 3, 5, 10], distance=distance)
 
         all_metrics.update({
             key : retrieval_metrics
+        })
+        
+        ## from the ranking and the dataset, get the captions of the retrievals in top order
+        caption_retrieval = []
+        
+        for i in range(len(file_idx)):
+            
+            
+            
+            gt_caption = dataset[file_idx[i][0]]['prompt']
+            argrank = ranking[i].tolist()
+            
+            retrieved_captions = [dataset[rank]['prompt'] for rank in argrank[:5]]
+            
+            caption_retrieval += [{'gt': gt_caption, 'retrieved': retrieved_captions}]
+            
+        all_caption_retrieval.update({
+            key: caption_retrieval
         })
         
     out_ = {
@@ -274,7 +340,7 @@ def eval_dataset(model, dataset, limit_n=-1, distance='cosine', preextracted_fea
         'pred_audio': preds,
     }
 
-    return all_metrics, clap_sims, out_
+    return all_metrics, clap_sims, out_, all_caption_retrieval
 
 
 def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs):
@@ -286,8 +352,10 @@ def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs
     audio_embeds, text_embeds, preds = [], [], []
 
     captions = []
+    
+    pbar = tqdm(itertools.islice(enumerate(dataset), 0, limit_n))
 
-    for i, datum in tqdm(itertools.islice(enumerate(dataset), 0, limit_n)):
+    for i, datum in pbar:
 
         embeddings_and_preds = get_embeddings_and_preds(
             model, datum, preextracted_features, **kwargs)
@@ -300,9 +368,10 @@ def pred_dataset(model, dataset,limit_n=-1, preextracted_features=True, **kwargs
         
         preds.append(embeddings_and_preds['preds'])
         
-        print(f'text_embeds: {text_embeds[-1].shape}')
-        print(f'audio_embeds: {audio_embeds[-1].shape}')
-        print(f'preds: {preds[-1].shape}')
+        
+        msg = f'text_embeds: {text_embeds[-1].shape}' + ' ' + f'audio_embeds: {audio_embeds[-1].shape}' + ' ' + f'preds: {preds[-1].shape}'
+        # update the tqdm bar with the message
+        # pbar.set_description(msg)
         
         file_idx.append(datum['file_idx'])
         
