@@ -276,15 +276,15 @@ if __name__ == '__main__':
                     'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-59-43-7lnzqj-ip-10-2-239-154.ec2.internal'},
                     'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-09-15-32-35-9ngrhp-ip-10-0-73-91.ec2.internal'},
                     'MULET5': {'model_name': 'diffgar-training-2024-10-22-23-39-20-2xguwt-ip-10-2-125-92.ec2.internal'},
-                    'MUSCALL': {'model_name': 'diffgar-training-2024-11-17-02-48-50-gy0904-ip-10-0-219-13.ec2.internal'},
-                    'MUSCALLT5': {'model_name': 'diffgar-training-2024-11-17-21-51-22-sgzoid-ip-10-2-69-42.ec2.internal'},
+                    'MUSCALL': {'model_name': ''},
+                    'MUSCALLT5': {'model_name': ''},
                 },
                 'song_describer': {
                     'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
                     'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
                     'MULET5': {'model_name': 'diffgar-training-2024-10-23-10-24-58-ecrjda-ip-10-2-200-242.ec2.internal'},
-                    'MUSCALL': {'model_name': 'upbeat-elevator-230'},
-                    'MUSCALLT5': {'model_name': 'dry-brook-234'},
+                    'MUSCALL': {'model_name': ''},
+                    'MUSCALLT5': {'model_name': ''},
                 }
                 
             }
@@ -312,16 +312,16 @@ if __name__ == '__main__':
         #                 'tiny': {'model_name': 'diffgar-training-2024-10-23-00-07-24-e4fja8-ip-10-2-221-193.ec2.internal'},
         #             },
         #             'MUSCALL': {
-        #                 'xlarge': {'model_name': 'diffgar-training-2024-11-17-04-10-38-lpcdp3-ip-10-2-83-94.ec2.internal'},
-        #                 'large': {'model_name': 'diffgar-training-2024-11-17-03-09-26-mh79i5-ip-10-0-114-113.ec2.internal'},
-        #                 'small': {'model_name': 'diffgar-training-2024-11-17-03-21-07-m09gq2-ip-10-2-88-203.ec2.internal'},
-        #                 'tiny': {'model_name': 'diffgar-training-2024-11-17-03-48-54-fpj5iz-ip-10-2-192-209.ec2.internal'},
+        #                 'xlarge': {''},
+        #                 'large': {''},
+        #                 'small': {''},
+        #                 'tiny': {''},
         #             },
         #             'MUSCALLT5': {
-        #                 'xlarge': {'model_name': 'diffgar-training-2024-11-18-00-18-02-cxla3f-ip-10-0-153-186.ec2.internal'},
-        #                 'large': {'model_name': 'diffgar-training-2024-11-17-22-01-45-dabb57-ip-10-0-140-72.ec2.internal'},
-        #                 'small': {'model_name': 'diffgar-training-2024-11-17-23-19-02-0o9uk7-ip-10-0-215-101.ec2.internal'},
-        #                 'tiny': {'model_name': 'diffgar-training-2024-11-17-22-34-56-cusjlr-ip-10-0-97-119.ec2.internal'},
+        #                 'xlarge': {'model_name': ''},
+        #                 'large': {'model_name': ''},
+        #                 'small': {''},
+        #                 'tiny': {''},
         #             },
         #         },
         #         'song_describer': {
@@ -346,14 +346,14 @@ if __name__ == '__main__':
         #             'MUSCALL': {
         #                 # 'xlarge' : {'model_name' : ''},
         #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : 'neat-tree-236'},
-        #                 'tiny' : {'model_name' : 'ancient-donkey-237'},
+        #                 'small' : {'model_name' : ''},
+        #                 'tiny' : {'model_name' : ''},
         #             },
         #             'MUSCALLT5': {
         #                 # 'xlarge' : {'model_name' : ''},
         #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : 'soft-leaf-235'},
-        #                 'tiny' : {'model_name' : 'sunny-aardvark-233'},
+        #                 'small' : {'model_name' : ''},
+        #                 'tiny' : {'model_name' : ''},
         #             },
         #         },
         #     },
