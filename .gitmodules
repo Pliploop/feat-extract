@@ -1,0 +1,4 @@
+[submodule "diffgar/models/clap"]
+	path = diffgar/models/clap
+	url = https://github.com/Pliploop/CLAP.git
+	branch = diffgar
