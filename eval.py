@@ -276,88 +276,88 @@ if __name__ == '__main__':
                     'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-59-43-7lnzqj-ip-10-2-239-154.ec2.internal'},
                     'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-09-15-32-35-9ngrhp-ip-10-0-73-91.ec2.internal'},
                     'MULET5': {'model_name': 'diffgar-training-2024-10-22-23-39-20-2xguwt-ip-10-2-125-92.ec2.internal'},
-                    'MUSCALL': {'model_name': ''},
-                    'MUSCALLT5': {'model_name': ''},
+                    'MUSCALL': {'model_name': 'diffgar-training-2024-11-21-11-56-53-6iw01q-ip-10-0-213-227.ec2.internal'},
+                    # 'MUSCALLT5': {'model_name': ''},
                 },
                 'song_describer': {
                     'CLAPT5': {'model_name': 'diffgar-training-2024-10-12-00-32-45-9i65xk-ip-10-0-73-210.ec2.internal'},
                     'CLAPCLAP': {'model_name': 'diffgar-training-2024-10-08-15-39-16-394tsk-ip-10-2-207-31.ec2.internal'},
                     'MULET5': {'model_name': 'diffgar-training-2024-10-23-10-24-58-ecrjda-ip-10-2-200-242.ec2.internal'},
-                    'MUSCALL': {'model_name': ''},
-                    'MUSCALLT5': {'model_name': ''},
+                    'MUSCALL': {'model_name': 'dandy-blaze-263'},
+                    'MUSCALLT5': {'model_name': 'fancy-forest-260'},
                 }
                 
             }
         },
-        # 'model_scale': {
-        #     'task': {
-        #         'upmm': {
-        #             'CLAPT5': {
-        #                 'xlarge' : {'model_name' : 'diffgar-training-2024-11-19-02-41-34-a877a0-ip-10-2-125-78.ec2.internal'},
-        #                 'large' : {'model_name' : 'diffgar-training-2024-11-19-01-53-40-cc99d2-ip-10-2-103-60.ec2.internal'},
-        #                 'small' : {'model_name' : 'diffgar-training-2024-11-19-02-57-35-yki4n1-ip-10-0-150-137.ec2.internal'},
-        #                 'tiny' : {'model_name' : 'diffgar-training-2024-11-19-02-20-37-nn22pe-ip-10-0-157-183.ec2.internal'},
-        #             },
-        #             'CLAPCLAP': {
-        #                 'xlarge': {'model_name': 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal'},
-        #                 'large': {'model_name': 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal'},
-        #                 'small': {'model_name': 'diffgar-training-2024-10-09-15-17-25-8sarg2-ip-10-0-206-118.ec2.internal'},
-        #                 'tiny': {'model_name': 'diffgar-training-2024-10-09-16-00-15-1y2807-ip-10-2-224-244.ec2.internal'},
+        'model_scale': {
+            'task': {
+                'upmm': {
+                    'CLAPT5': {
+                        'xlarge' : {'model_name' : 'diffgar-training-2024-11-19-02-41-34-a877a0-ip-10-2-125-78.ec2.internal'},
+                        'large' : {'model_name' : 'diffgar-training-2024-11-19-01-53-40-cc99d2-ip-10-2-103-60.ec2.internal'},
+                        'small' : {'model_name' : 'diffgar-training-2024-11-19-02-57-35-yki4n1-ip-10-0-150-137.ec2.internal'},
+                        'tiny' : {'model_name' : 'diffgar-training-2024-11-19-02-20-37-nn22pe-ip-10-0-157-183.ec2.internal'},
+                    },
+                    'CLAPCLAP': {
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-10-08-56-46-3a54dk-ip-10-0-136-252.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-09-15-48-35-v5sxgr-ip-10-0-86-191.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-09-15-17-25-8sarg2-ip-10-0-206-118.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-09-16-00-15-1y2807-ip-10-2-224-244.ec2.internal'},
 
-        #             },
-        #             'MULET5': {
-        #                 'xlarge': {'model_name': 'diffgar-training-2024-10-23-01-08-58-gr6g8k-ip-10-0-125-16.ec2.internal'},
-        #                 'large': {'model_name': 'diffgar-training-2024-10-23-00-57-51-azhmyc-ip-10-0-180-242.ec2.internal'},
-        #                 'small': {'model_name': 'diffgar-training-2024-10-23-00-41-42-vra4x4-ip-10-2-91-162.ec2.internal'},
-        #                 'tiny': {'model_name': 'diffgar-training-2024-10-23-00-07-24-e4fja8-ip-10-2-221-193.ec2.internal'},
-        #             },
-        #             'MUSCALL': {
-        #                 'xlarge': {''},
-        #                 'large': {''},
-        #                 'small': {''},
-        #                 'tiny': {''},
-        #             },
-        #             'MUSCALLT5': {
-        #                 'xlarge': {'model_name': ''},
-        #                 'large': {'model_name': ''},
-        #                 'small': {''},
-        #                 'tiny': {''},
-        #             },
-        #         },
-        #         'song_describer': {
-        #             'CLAPT5': {
-        #                 # 'xlarge' : {'model_name' : ''},
-        #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : 'smooth-lake-225'},
-        #                 'tiny' : {'model_name' : 'breezy-wind-226'},
-        #             },
-        #             'CLAPCLAP': {
-        #                 'xlarge': {'model_name': 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal'},
-        #                 'large': {'model_name': 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal'},
-        #                 'small': {'model_name': 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'},
-        #                 'tiny': {'model_name': 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'}
-        #             },
-        #             'MULET5': {
-        #                 # 'xlarge' : {'model_name' : ''},
-        #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : 'trim-sunset-227'},
-        #                 'tiny' : {'model_name' : 'rare-blaze-228'},
-        #             },
-        #             'MUSCALL': {
-        #                 # 'xlarge' : {'model_name' : ''},
-        #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : ''},
-        #                 'tiny' : {'model_name' : ''},
-        #             },
-        #             'MUSCALLT5': {
-        #                 # 'xlarge' : {'model_name' : ''},
-        #                 # 'large' : {'model_name' : ''},
-        #                 'small' : {'model_name' : ''},
-        #                 'tiny' : {'model_name' : ''},
-        #             },
-        #         },
-        #     },
-        # },
+                    },
+                    'MULET5': {
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-23-01-08-58-gr6g8k-ip-10-0-125-16.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-23-00-57-51-azhmyc-ip-10-0-180-242.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-23-00-41-42-vra4x4-ip-10-2-91-162.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-23-00-07-24-e4fja8-ip-10-2-221-193.ec2.internal'},
+                    },
+                    'MUSCALL': {
+                        'xlarge': {'diffgar-training-2024-11-21-11-45-56-2famcr-ip-10-0-250-212.ec2.internal'},
+                        # 'large': {},
+                        # 'small': {''},
+                        'tiny': {'diffgar-training-2024-11-21-11-21-42-24mnyv-ip-10-0-66-147.ec2.internal'},
+                    },
+                    'MUSCALLT5': {
+                        # 'xlarge': {'model_name': ''},
+                        # 'large': {'model_name': ''},
+                        # 'small': {'model_name': ''},
+                        # 'tiny': {'model_name': ''},
+                    },
+                },
+                'song_describer': {
+                    'CLAPT5': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'smooth-lake-225'},
+                        'tiny' : {'model_name' : 'breezy-wind-226'},
+                    },
+                    'CLAPCLAP': {
+                        'xlarge': {'model_name': 'diffgar-training-2024-10-08-16-11-19-p6io6d-ip-10-0-156-223.ec2.internal'},
+                        'large': {'model_name': 'diffgar-training-2024-10-09-08-20-15-pwappv-ip-10-0-121-167.ec2.internal'},
+                        'small': {'model_name': 'diffgar-training-2024-10-08-14-53-57-zqszhl-ip-10-0-154-119.ec2.internal'},
+                        'tiny': {'model_name': 'diffgar-training-2024-10-08-14-46-11-jwnby2-ip-10-2-94-233.ec2.internal'}
+                    },
+                    'MULET5': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'trim-sunset-227'},
+                        'tiny' : {'model_name' : 'rare-blaze-228'},
+                    },
+                    'MUSCALL': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'worthy-cosmos-262'},
+                        'tiny' : {'model_name' : 'royal-elevator-261'},
+                    },
+                    'MUSCALLT5': {
+                        # 'xlarge' : {'model_name' : ''},
+                        # 'large' : {'model_name' : ''},
+                        'small' : {'model_name' : 'wandering-snowball-259'},
+                        'tiny' : {'model_name' : 'efficient-blaze-258'},
+                    },
+                },
+            },
+        },
     }
 
     tasks = [
@@ -393,10 +393,10 @@ if __name__ == '__main__':
         [
             5000,
             10000,
-            # 15000,
-            # 20000,
+            15000,
+            20000,
             50000,
-            # 100000
+            100000
             ] for _ in model_names
     ] 
 
@@ -408,8 +408,8 @@ if __name__ == '__main__':
         1,
         5,
         10,
-        # 20,
-        # 100
+        20,
+        100
     ]
     for task in tasks:
         for i, model_name in enumerate(model_names):
