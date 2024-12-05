@@ -1,5 +1,5 @@
-from diffgar.models.ldm.diffusion import LightningDiffGar
-from diffgar.dataloading.dataloaders import TextAudioDataModule
+from feat_extract.models.feature_extractor import FeatureExtractor
+from feat_extract.dataloading.dataloaders import AudioDataModule
 from pytorch_lightning.cli import SaveConfigCallback, LightningCLI
 import os
 import boto3
@@ -42,6 +42,7 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--save", default=False)
         parser.add_argument('--device', default='cuda:0')
         parser.add_argument('--extracted_at', default=None)
+        parser.add_argument('--preprocessing_config_path', default=None)
 
     def instantiate_classes(self) -> None:
         pass
@@ -51,12 +52,15 @@ if __name__ == "__main__":
 
     logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
     
-    cli = MyLightningCLI(model_class=LightningDiffGar, datamodule_class=TextAudioDataModule, seed_everything_default=123,
+    cli = MyLightningCLI(model_class=FeatureExtractor, datamodule_class=AudioDataModule, seed_everything_default=123,
                          run=False, save_config_callback=LoggerSaveConfigCallback, save_config_kwargs={"overwrite": True})
     
-    cli.parser.save(cli.config, "preprocessing_config.yaml", skip_none=False, overwrite=True)
+    
     
     cfg = OmegaConf.to_container(OmegaConf.load("sagemaker_training/configs/preprocessing_config.yaml"))
+    
+    
+    cli.parser.save(cli.config, "preprocessing_config.yaml", skip_none=False, overwrite=True)
     
     
     upload_cfg_to = cfg['pull_config']

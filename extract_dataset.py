@@ -1,6 +1,5 @@
-from diffgar.dataloading.dataloaders import TextAudioDataModule
-from diffgar.models.ldm.diffusion import LightningDiffGar
-from diffgar.dataloading.dataloaders import TextAudioDataModule
+from feat_extract.models.feature_extractor import FeatureExtractor
+from feat_extract.dataloading.dataloaders import AudioDataModule
 from pytorch_lightning.cli import SaveConfigCallback, LightningCLI
 import os
 from jsonargparse import lazy_instance
@@ -54,7 +53,7 @@ if __name__ == "__main__":
 
     # try:    
 
-    cli = MyLightningCLI(model_class=LightningDiffGar, datamodule_class=TextAudioDataModule, seed_everything_default=123,
+    cli = MyLightningCLI(model_class=FeatureExtractor, datamodule_class=AudioDataModule, seed_everything_default=123,
                         run=False, save_config_callback=LoggerSaveConfigCallback, save_config_kwargs={"overwrite": True},trainer_defaults=MyLightningCLI.trainer_defaults)
 
     logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -62,10 +61,10 @@ if __name__ == "__main__":
     
     
     dm = cli.datamodule
-    ldm = cli.model
+    model = cli.model
     
     dm.setup(None)
-    ldm.encoder_pair.to(cli.config['device'])
+    model.encoder.to(cli.config['device'])
     
     cli.config['extracted_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -102,5 +101,5 @@ if __name__ == "__main__":
     print(f"Extracting features with {extract_method} method, saving to {save_dir}, out_key: {out_key}, hop: {hop}, limit_n: {limit_n}, save: {save}")
     for dataset in [dm.train_dataset, dm.val_dataset, dm.test_dataset]:
         if dataset is not None:
-            dataset.extract_and_save_features(ldm.encoder_pair, save_dir = save_dir, extract_method=extract_method, out_key = out_key, hop = hop, limit_n = limit_n, save = save, verbose = False, root_path = root_path)
+            dataset.extract_and_save_features(model, save_dir = save_dir, extract_method=extract_method, out_key = out_key, hop = hop, limit_n = limit_n, save = save, verbose = False, root_path = root_path)
     
