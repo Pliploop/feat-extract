@@ -8,3 +8,6 @@
 [submodule "feat_extract/models/muscall"]
 	path = feat_extract/models/muscall
 	url = https://github.com/Pliploop/muscall.git
+[submodule "feat_extract/models/clap"]
+	path = feat_extract/models/clap
+	url = https://github.com/Pliploop/CLAP.git
