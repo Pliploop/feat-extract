@@ -41,11 +41,10 @@ trainer:
   reload_dataloaders_every_n_epochs: 0
   default_root_dir: null
 model:
-  encoder_pair: MusCALL
-  encoder_pair_kwargs:
+  encoder: Music2Latent
+  encoder_kwargs:
     config: diffgar/models/muscall/configs/models/muscall.yaml
     ckpt_path: s3://maml-aimcdt/storage/julien/MusCALL/best_model.pth.tar
-  preextracted_latents: true
 data:
   task: null
   task_kwargs:

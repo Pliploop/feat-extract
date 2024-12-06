@@ -112,41 +112,13 @@ class TextAudioDataset(Dataset):
                     print(f"Error loading preextracted features: {e}") if verbose else None
                     return self[idx + 1]
         
-        if self.return_text:
-            possible_captions = annot['caption']
-            # ramdomly choose a caption hash
             
-            random_hash = random.choice(list(possible_captions.keys()))
-        
-            caption = possible_captions[random_hash]
-            
-            if self.concept is not None:
-                
-                    assert self.concept in annot['concepts'], f"Concept {self.concept} not found in annotations"
-                
-                    concept_captions = annot['concepts'][self.concept]
-                    
-                    #check if the hash is in the captions
-                    if random_hash in concept_captions.keys():
-                        concept_caption = concept_captions[random_hash]
-                        pluscaption = random.choice(concept_caption['pluscaptions'])
-                        minuscaption = random.choice(concept_caption['minuscaptions'])
-                    else:
-                        print(f"Hash {random_hash} of caption {caption} not found in concept {self.concept} captions")
-                        return self.__getitem__(idx+1)
-                    
         return_dict = {}
         
         if self.return_audio:
             return_dict['audio'] = audio
             return_dict['file_path'] = annot['file_path']
-            
-        if self.return_text:
-            return_dict['prompt'] = caption
-            if self.concept is not None:
-                return_dict['plusprompt'] = pluscaption
-                return_dict['minusprompt'] = minuscaption
-                
+        
         return_dict['file_idx'] = annot['file_index']
 
                 
@@ -159,18 +131,15 @@ class TextAudioDataset(Dataset):
         print(f"Extracting features with {extract_method} method on {device} device") if verbose else None
         
         
-        
-        model.freeze()
+        for p in model.parameters():
+            p.requires_grad = False
         
         for i in range(len(self)):
             try:
                 item = self.__getitem__(i, return_full_audio = return_full_audio, hop = hop, verbose = verbose)
                 file_path = self.annotations[i]['file_path'].replace('.mp3','.npy').replace('.wav','.npy')
                 
-                audio = item['audio'].squeeze(1).to(device)
-                text = item['prompt']
-                
-                
+                audio = item['audio'].squeeze(1).to(device) 
                 if audio.shape[0] > 200 :
                     chunks = torch.split(audio, 200, dim=0)
                     chunks = list(chunks)
@@ -188,7 +157,8 @@ class TextAudioDataset(Dataset):
                 
                 yield audio_features, file_path
             except Exception as e:
-                pass
+                print(f"Error extracting features for {file_path}: {e}") if verbose else None
+                raise e
             
     def extract_and_save_features(self, model, save_dir = None, extract_method = 'extract_features', extract_kwargs = {}, out_key = 'embedding', hop = None, return_full_audio = True, limit_n = None, save = False, verbose = True, root_path = None):
         
@@ -214,6 +184,8 @@ class TextAudioDataset(Dataset):
                 file_path = file_path.replace(root_path+'/','')
 
             save_path = os.path.join(save_dir, file_path)
+            
+            
             
             if save and audio_features is not None:
                 

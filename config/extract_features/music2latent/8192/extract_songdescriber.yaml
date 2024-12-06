@@ -41,26 +41,24 @@ trainer:
   reload_dataloaders_every_n_epochs: 0
   default_root_dir: null
 model:
-  encoder: CLAP_Module
-  encoder_kwargs:
-    enable_fusion: false
-    amodel: HTSAT-base
-    device: cpu #just for init then sent to the right device
-  encoder_ckpt: 'feat_extract/models/pretrained_ckpt/CLAP/music_audioset_epoch_15_esc_90.14.pt'
+  encoder: Music2Latent
 data:
   task: null
   task_kwargs:
-    data_path: /opt/ml/processing/input
+    data_path: /import/research_c4dm/jpmg86/song-describer/data/audio
   preextracted_features: false
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
-  target_sr: 48000
-  target_n_samples: 479999
-save_dir: /opt/ml/processing/output/clap/1hz
-root_path: /opt/ml/processing/input
-extract_method: get_audio_embedding_from_data
-out_key: embedding_proj
-hop: 48000
+  target_sr: 44100
+  target_n_samples: 44100
+save_dir: /import/research_c4dm/jpmg86/embedding_datasets/song-describer/data/music2latent/1hz
+root_path: /import/research_c4dm/jpmg86/song-describer/data/audio
+extract_method: extract_features
+out_key: averaged_latents
+extract_kwargs:
+  pool_hop: 11
+  extract_features: true
+hop: 44100
 limit_n: null
-
+save: false

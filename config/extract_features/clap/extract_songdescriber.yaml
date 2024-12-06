@@ -50,15 +50,15 @@ model:
 data:
   task: null
   task_kwargs:
-    data_path: /opt/ml/processing/input
+    data_path: /import/research_c4dm/jpmg86/song-describer/data/audio
   preextracted_features: false
   truncate_preextracted: 64
   batch_size: 32
   num_workers: 4
   target_sr: 48000
   target_n_samples: 479999
-save_dir: /opt/ml/processing/output/clap/1hz
-root_path: /opt/ml/processing/input
+save_dir: /import/research_c4dm/jpmg86/embedding_datasets/song-describer/data/clap/1hz
+root_path: /import/research_c4dm/jpmg86/song-describer/data/audio
 extract_method: get_audio_embedding_from_data
 out_key: embedding_proj
 hop: 48000

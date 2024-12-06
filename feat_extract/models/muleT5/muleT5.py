@@ -437,17 +437,12 @@ class MULE(nn.Module):
         
         return model
  
-from ..ldm.text_encoders import T5TextEncoder
- 
 class MuleT5EncoderPair(nn.Module):
     
     def __init__(self, text_encoder ='google-t5/t5-base', audio_encoder_ckpt = None):
         super(MuleT5EncoderPair, self).__init__()
-        self.text_encoder = T5TextEncoder(model_name=text_encoder)
         self.audio_encoder = MULE.from_pretrained(audio_encoder_ckpt) if audio_encoder_ckpt is not None else MULE()
         
-    def get_text_embedding(self, prompts, **kwargs):
-        return self.text_encoder.get_text_embedding(prompts, **kwargs)
     
     def get_audio_embedding_from_data(self, data, **kwargs):
         return self.audio_encoder.extract_features(data, **kwargs)

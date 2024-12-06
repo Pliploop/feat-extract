@@ -36,6 +36,7 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--save_dir", default=None)
         parser.add_argument("--root_path", default=None)
         parser.add_argument("--extract_method", default='get_audio_embedding_from_data')
+        parser.add_argument("--extract_kwargs", default={})
         parser.add_argument("--out_key", default='embedding_proj')
         parser.add_argument("--hop", default=48000)
         parser.add_argument("--limit_n", default=None)
@@ -65,7 +66,6 @@ if __name__ == "__main__":
     
     dm.setup(None)
     model.encoder.to(cli.config['device'])
-    
     cli.config['extracted_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     
@@ -101,5 +101,5 @@ if __name__ == "__main__":
     print(f"Extracting features with {extract_method} method, saving to {save_dir}, out_key: {out_key}, hop: {hop}, limit_n: {limit_n}, save: {save}")
     for dataset in [dm.train_dataset, dm.val_dataset, dm.test_dataset]:
         if dataset is not None:
-            dataset.extract_and_save_features(model, save_dir = save_dir, extract_method=extract_method, out_key = out_key, hop = hop, limit_n = limit_n, save = save, verbose = False, root_path = root_path)
+            dataset.extract_and_save_features(model.encoder, save_dir = save_dir, extract_method=extract_method, out_key = out_key, hop = hop, limit_n = limit_n, save = save, verbose = False, root_path = root_path, extract_kwargs = cli.config.get('extract_kwargs', {}) )
     
