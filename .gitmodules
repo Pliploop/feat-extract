@@ -5,3 +5,6 @@
 [submodule "diffgar/models/muscall"]
 	path = diffgar/models/muscall
 	url = https://github.com/Pliploop/muscall.git
+[submodule "feat_extract/models/muscall"]
+	path = feat_extract/models/muscall
+	url = https://github.com/Pliploop/muscall.git
