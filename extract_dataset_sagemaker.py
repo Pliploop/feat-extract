@@ -57,7 +57,7 @@ if __name__ == "__main__":
     
     
     
-    cfg = OmegaConf.to_container(OmegaConf.load("sagemaker_training/configs/preprocessing_config.yaml"))
+    cfg = OmegaConf.to_container(OmegaConf.load(cli.config.preprocessing_config_path))
     
     
     cli.parser.save(cli.config, "preprocessing_config.yaml", skip_none=False, overwrite=True)

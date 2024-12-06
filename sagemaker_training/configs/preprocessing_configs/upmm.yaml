@@ -10,12 +10,12 @@ processing_outputs:
     output_name: npy
     source: /opt/ml/processing/output
 processor:
-  image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_feature_extraction:latest
+  image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_extract_features:latest
   instance_count: 10
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.2xlarge
   volume_size_in_gb: 200
-  entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/datasets/upmm/features/preprocessing_config.yaml]
+  entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/datasets/upmm/embeddings/preprocessing_config.yaml]
   tags:
     - Key: Project
       Value: maml-feature-extraction
