@@ -69,8 +69,7 @@ RUN pip install s3torchconnector
 # # Install AWS CLI
 
 # # Copy project code
-COPY ./diffgar $LOCAL_DIR/diffgar
-COPY ./train_ldm.py $LOCAL_DIR/train_ldm.py
+COPY ./feat_extract $LOCAL_DIR/feat_extract
 COPY ./extract_dataset.py $LOCAL_DIR/extract_dataset.py
 COPY --chmod=777 ./sagemaker_training/train $LOCAL_DIR/
 

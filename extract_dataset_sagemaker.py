@@ -59,6 +59,14 @@ if __name__ == "__main__":
     
     cfg = OmegaConf.to_container(OmegaConf.load(cli.config.preprocessing_config_path))
     
+    save_dir = cli.config['save_dir']
+    pull_config = cfg['pull_config']
+    save_dir = save_dir.replace("/opt/ml/processing/output/", "")
+    file_name = pull_config.split("/")[-1]
+    pull_config = pull_config.replace(file_name, save_dir + "/" + file_name)
+    
+    cfg['pull_config'] = pull_config
+    cfg['processor']['entrypoint'] = cfg['processor']['entrypoint'][:-1] + [pull_config]
     
     cli.parser.save(cli.config, "preprocessing_config.yaml", skip_none=False, overwrite=True)
     

@@ -289,7 +289,6 @@ class NFNet(nn.Module):
         spec = self.frontend(wav) if self.frontend is not None else wav
         
         
-        
         slow = self.slow_stem(spec)
         fast = self.fast_stem(spec)
 
@@ -451,16 +450,11 @@ class MuleT5EncoderPair(nn.Module):
         return self.get_audio_embedding_from_data(data, **kwargs)
     
     def freeze(self):
-        for param in self.text_encoder.parameters():
-            param.requires_grad = False
             
         for param in self.audio_encoder.parameters():
             param.requires_grad = False
 
     def unfreeze(self):
-        for param in self.text_encoder.parameters():
-            param.requires_grad = True
-            
         for param in self.audio_encoder.parameters():
             param.requires_grad = True
     

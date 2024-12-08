@@ -1,12 +1,12 @@
 
 base_name: diffgar-extract
-pull_config: s3://maml-aimcdt/datasets/upmm/embeddings/preprocessing_config.yaml
+pull_config: s3://maml-aimcdt/datasets/embeddings/upmm/preprocessing_config.yaml
 processing_inputs:
   - source: s3://maml-ilaria/datasets/uppm_descriptions/audio/
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  - destination: s3://maml-aimcdt/datasets/upmm/embeddings
+  - destination: s3://maml-aimcdt/datasets/embeddings/upmm
     output_name: npy
     source: /opt/ml/processing/output
 processor:
@@ -15,7 +15,7 @@ processor:
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.2xlarge
   volume_size_in_gb: 200
-  entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/datasets/upmm/embeddings/preprocessing_config.yaml]
+  entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/datasets/embeddings/upmm/preprocessing_config.yaml]
   tags:
     - Key: Project
       Value: maml-feature-extraction
