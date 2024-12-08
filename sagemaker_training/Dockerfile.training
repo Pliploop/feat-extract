@@ -71,7 +71,6 @@ RUN pip install s3torchconnector
 # # Copy project code
 COPY ./feat_extract $LOCAL_DIR/feat_extract
 COPY ./extract_dataset.py $LOCAL_DIR/extract_dataset.py
-COPY --chmod=777 ./sagemaker_training/train $LOCAL_DIR/
 
 ## mount secrets from .secrets folder and get the wandb api key
 
