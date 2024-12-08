@@ -69,7 +69,7 @@ RUN pip install s3torchconnector
 # # Install AWS CLI
 
 # # Copy project code
-COPY ./feat_extract $LOCAL_DIR/diffgar
+COPY ./feat_extract $LOCAL_DIR/feat_extract
 COPY ./extract_dataset.py $LOCAL_DIR/extract_dataset.py
 
 ## mount secrets from .secrets folder and get the wandb api key
