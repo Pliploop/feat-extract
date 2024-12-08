@@ -20,6 +20,9 @@ class Music2Latent(nn.Module):
 
     @torch.no_grad()
     def extract_features(self, x, pool_hop, extract_features = True):
+        
+        print(x.shape)
+        
         latents =  self.encoder.encode(x,extract_features=extract_features)
         
         ## average the latents with average pooling with a hop of pool_hop
