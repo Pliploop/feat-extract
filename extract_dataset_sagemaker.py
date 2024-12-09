@@ -36,6 +36,7 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--save_dir", default=None)
         parser.add_argument("--root_path", default=None)
         parser.add_argument("--extract_method", default='get_audio_embedding_from_data')
+        parser.add_argument("--extract_kwargs", default={})
         parser.add_argument("--out_key", default='embedding_proj')
         parser.add_argument("--hop", default=48000)
         parser.add_argument("--limit_n", default=None)

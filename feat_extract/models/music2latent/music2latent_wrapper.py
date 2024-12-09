@@ -1,4 +1,4 @@
-from music2latent import EncoderDecoder
+from feat_extract.models.music2latent.music2latent.music2latent import EncoderDecoder
 from torch import nn
 import torch
 

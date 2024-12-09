@@ -5,7 +5,7 @@ from pytorch_lightning import LightningModule
 from feat_extract.models.clap.src.laion_clap import CLAP_Module
 from feat_extract.models.muleT5.muleT5 import MuleT5EncoderPair
 from feat_extract.models.muscall.muscall.models.muscall import MusCALL
-from feat_extract.models.music2latent.music2latent import Music2Latent
+from feat_extract.models.music2latent.music2latent_wrapper import Music2Latent
 
 def get_encoder(encoder, encoder_kwargs=None):
     if encoder_kwargs is None:
