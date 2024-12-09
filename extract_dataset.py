@@ -43,6 +43,8 @@ class MyLightningCLI(LightningCLI):
         parser.add_argument("--save", default=False)
         parser.add_argument('--device', default='cuda:0')
         parser.add_argument('--extracted_at', default=None)
+        parser.add_argument('--preprocessing_config_path', default=None)
+
         
 
 
