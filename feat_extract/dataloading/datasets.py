@@ -148,10 +148,14 @@ class TextAudioDataset(Dataset):
                         feat = getattr(model, extract_method)(chunk, **extract_kwargs)[out_key]
                         audio_features.append(feat)
                     audio_features = torch.cat(audio_features, dim=0)
+                        
                 else:
                     audio_features = getattr(model, extract_method)(audio.to(device), **extract_kwargs)[out_key]
+                    
                 
                 
+                if audio_features.dim() == 3: #time, small_time, features
+                    audio_features = audio_features.contiguous().view(-1, audio_features.shape[-1])
                 
                 print(f"Extracted features for {file_path}, shape: {audio_features.shape}") if verbose else None
                 
