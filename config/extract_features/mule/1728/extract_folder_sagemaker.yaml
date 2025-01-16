@@ -57,7 +57,7 @@ data:
 save_dir: /opt/ml/processing/output/mule_1728/1hz
 root_path: /opt/ml/processing/input
 extract_method: extract_features
-out_key: encoded
+out_key: embeddings
 hop: 16000
 limit_n: null
 

@@ -11,10 +11,10 @@ processing_outputs:
     source: /opt/ml/processing/output
 processor:
   image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_extract_features:latest
-  instance_count: 10
+  instance_count: 9
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.2xlarge
-  volume_size_in_gb: 200
+  volume_size_in_gb: 250
   entrypoint: [python, -m, extract_dataset, --config, s3://maml-aimcdt/datasets/embeddings/upmm/preprocessing_config.yaml]
   tags:
     - Key: Project
