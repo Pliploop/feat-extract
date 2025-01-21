@@ -244,3 +244,4 @@ sniffio
 async-timeout
 docker-pycreds
 music2latent
+fire
