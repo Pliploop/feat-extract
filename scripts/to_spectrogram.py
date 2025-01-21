@@ -105,7 +105,7 @@ class ToLogMelSpec:
         return x
 
 
-def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix='.wav', skip=0, min_length=6.1, verbose=False) -> None:
+def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix='.wav', skip=0, min_length=6.1, verbose=True, params='FFT_parameters2'):
     from_dir = str(from_dir)
     files = [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{suffix}', recursive=True)]
     files = [f[1:] if f[0] == '/' else f for f in files]
@@ -113,7 +113,7 @@ def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/process
     if skip > 0:
         files = files[skip:]
 
-    prms = FFT_parameters()
+    prms = eval(params)()
     to_lms = ToLogMelSpec(prms)
 
     print(f'Processing {len(files)} {suffix} files at a sampling rate of {prms.sample_rate} Hz...')

@@ -1,16 +1,16 @@
 
 base_name: diffgar-extract
 processing_inputs:
-  - source: s3://maml-datasets/mtg-jamendo/audio/
+  - source: s3://maml-ilaria/datasets/uppm_descriptions/audio/
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  - destination: s3://maml-aimcdt/datasets/music_dynamics_key/estimated/embeddings
+  - destination: s3://maml-aimcdt/datasets/upmm_spectrograms/spectrograms/
     output_name: npy
     source: /opt/ml/processing/output
 processor:
   image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_simple_scripts:latest
-  instance_count: 9
+  instance_count: 5
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.4xlarge
   volume_size_in_gb: 600

@@ -1,7 +1,7 @@
 
 import logging
 
-from sagemaker_training.sagemaker_processing import launch_sagemaker_processing
+from sagemaker_.sagemaker_processing import launch_sagemaker_processing
 from omegaconf import OmegaConf
 
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     # Update the entrypoint with the rest of the command-line arguments as a string
     if "entrypoint" in cfg:
-        cfg["entrypoint"] +=  [" ".join(unknown_args)]
+        cfg['processor']["entrypoint"] +=  [" ".join(unknown_args)]
 
     logger.info("Launching SageMaker Processing with configuration: %s", cfg)
 
