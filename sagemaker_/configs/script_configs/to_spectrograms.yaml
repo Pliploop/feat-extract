@@ -1,11 +1,11 @@
 
 base_name: diffgar-extract
 processing_inputs:
-  - source: s3://maml-ilaria/datasets/uppm_descriptions/audio/
+  - source: s3://maml-aimcdt/datasets/song-describer/data/audio/
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  - destination: s3://maml-aimcdt/datasets/upmm_spectrograms/spectrograms/
+  - destination: s3://maml-aimcdt/datasets/SLAP/song_describer/
     output_name: npy
     source: /opt/ml/processing/output
 processor:

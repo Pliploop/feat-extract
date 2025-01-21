@@ -3,6 +3,7 @@ import logging
 
 from sagemaker_.sagemaker_processing import launch_sagemaker_processing
 from omegaconf import OmegaConf
+from rich import pprint
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,8 @@ if __name__ == "__main__":
     if "entrypoint" in cfg:
         cfg['processor']["entrypoint"] +=  [" ".join(unknown_args)]
 
-    logger.info("Launching SageMaker Processing with configuration: %s", cfg)
+    logger.info("Launching SageMaker Processing with configuration")
+    pprint(cfg)
 
     # Launch the SageMaker processing job
     launch_sagemaker_processing(cfg)

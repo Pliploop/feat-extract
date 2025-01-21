@@ -106,28 +106,29 @@ class ToLogMelSpec:
 
 
 def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix=['.wav','.mp3'], skip=0, min_length=6.1, verbose=True, params='FFT_parameters2'):
-    from_dir = str(from_dir)
+    
     if isinstance(suffix, str):
         suffix = [suffix]
-    files = []
-    for s in suffix:
-        files += [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{s}', recursive=True)]
-    files = [f[1:] if f[0] == '/' else f for f in files]
-    files = sorted(files)
-    if skip > 0:
-        files = files[skip:]
+    
+    for suff in suffix:
+        from_dir = str(from_dir)
+        files += [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{suff}', recursive=True)]
+        files = [f[1:] if f[0] == '/' else f for f in files]
+        files = sorted(files)
+        if skip > 0:
+            files = files[skip:]
 
-    prms = eval(params)()
-    to_lms = ToLogMelSpec(prms)
+        prms = eval(params)()
+        to_lms = ToLogMelSpec(prms)
 
-    print(f'Processing {len(files)} {suffix} files at a sampling rate of {prms.sample_rate} Hz...')
-    assert len(files) > 0
+        print(f'Processing {len(files)} {suffix} files at a sampling rate of {prms.sample_rate} Hz...')
+        assert len(files) > 0
 
-    with Pool() as p:
-        args = [[f, from_dir, to_dir, prms, to_lms, suffix, min_length, verbose] for f in files]
-        shapes = list(tqdm(p.imap(_converter_worker, args), total=len(args)))
+        with Pool() as p:
+            args = [[f, from_dir, to_dir, prms, to_lms, suff, min_length, verbose] for f in files]
+            shapes = list(tqdm(p.imap(_converter_worker, args), total=len(args)))
 
-    print('finished.')
+        print('finished.')
 
 
 if __name__ == "__main__":
