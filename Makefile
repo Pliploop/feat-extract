@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-TAG_TRAINING := 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_extract_features
+TAG_TRAINING := 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_simple_scripts
 
 build-train:  ## Build the Docker image to train on AWS
 	docker build \

@@ -6,7 +6,7 @@ processing_inputs:
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  - destination: s3://maml-aimcdt/datasets/embeddings/spotify_most_popular
+  - destination: s3://maml-aimcdt/datasets/embeddings/spotify_most_popular/v1.1/MULE/
     output_name: npy
     source: /opt/ml/processing/output
 processor:

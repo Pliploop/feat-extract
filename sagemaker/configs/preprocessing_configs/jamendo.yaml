@@ -6,7 +6,7 @@ processing_inputs:
     input_name: audio
     destination: /opt/ml/processing/input
 processing_outputs:
-  - destination: s3://maml-aimcdt/datasets/embeddings/mtg-jamendo
+  - destination: s3://maml-aimcdt/datasets/music_dynamics_key/estimated/embeddings
     output_name: npy
     source: /opt/ml/processing/output
 processor:
