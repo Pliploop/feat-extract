@@ -112,7 +112,7 @@ def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/process
     
     for suff in suffix:
         from_dir = str(from_dir)
-        files += [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{suff}', recursive=True)]
+        files = [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{suff}', recursive=True)]
         files = [f[1:] if f[0] == '/' else f for f in files]
         files = sorted(files)
         if skip > 0:

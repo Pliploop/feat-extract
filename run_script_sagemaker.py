@@ -3,7 +3,7 @@ import logging
 
 from sagemaker_.sagemaker_processing import launch_sagemaker_processing
 from omegaconf import OmegaConf
-from rich import pprint
+from rich.pretty import pprint
 
 
 logger = logging.getLogger(__name__)
