@@ -105,9 +105,13 @@ class ToLogMelSpec:
         return x
 
 
-def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix='.wav', skip=0, min_length=6.1, verbose=True, params='FFT_parameters2'):
+def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix=['.wav','.mp3'], skip=0, min_length=6.1, verbose=True, params='FFT_parameters2'):
     from_dir = str(from_dir)
-    files = [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{suffix}', recursive=True)]
+    if isinstance(suffix, str):
+        suffix = [suffix]
+    files = []
+    for s in suffix:
+        files += [f.replace(from_dir, '') for f in glob.glob(f'{from_dir}/**/*{s}', recursive=True)]
     files = [f[1:] if f[0] == '/' else f for f in files]
     files = sorted(files)
     if skip > 0:
