@@ -122,11 +122,12 @@ def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/process
         to_lms = ToLogMelSpec(prms)
 
         print(f'Processing {len(files)} {suffix} files at a sampling rate of {prms.sample_rate} Hz...')
-        assert len(files) > 0
 
-        with Pool() as p:
-            args = [[f, from_dir, to_dir, prms, to_lms, suff, min_length, verbose] for f in files]
-            shapes = list(tqdm(p.imap(_converter_worker, args), total=len(args)))
+
+        if len(files) > 0:
+            with Pool() as p:
+                args = [[f, from_dir, to_dir, prms, to_lms, suff, min_length, verbose] for f in files]
+                shapes = list(tqdm(p.imap(_converter_worker, args), total=len(args)))
 
         print('finished.')
 
