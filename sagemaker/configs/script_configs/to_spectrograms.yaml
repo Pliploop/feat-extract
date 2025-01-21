@@ -14,7 +14,7 @@ processor:
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.4xlarge
   volume_size_in_gb: 600
-  entrypoint: [python, -m, scripts/to_spectrogram]
+  entrypoint: [python, scripts/to_spectrogram.py]
   tags:
     - Key: Project
       Value: maml-feature-extraction
