@@ -10,7 +10,7 @@ processing_outputs:
 processor:
   image_uri: 427750820708.dkr.ecr.us-east-1.amazonaws.com/julien_simple_scripts:latest
   instance_count: 10
-  role: maml-aimcdt-sagemaker
+  role: maml-sagemaker
   instance_type: ml.m5.4xlarge
   volume_size_in_gb: 1024
   entrypoint: [python, scripts/to_spectrogram.py]
