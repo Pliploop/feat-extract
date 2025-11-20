@@ -12,7 +12,7 @@ processor:
   instance_count: 10
   role: maml-aimcdt-sagemaker
   instance_type: ml.g5.4xlarge
-  volume_size_in_gb: 1200
+  volume_size_in_gb: 1024
   entrypoint: [python, scripts/to_spectrogram.py]
   tags:
     - Key: Project
