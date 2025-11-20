@@ -45,6 +45,16 @@ class FFT_parameters2:
     n_mels = 64
     f_min = 50
     f_max = 14000
+    
+
+class FFT_parameters3:
+    sample_rate= 16000
+    n_fft= 1024
+    window_size= 1024
+    hop_size= 512
+    n_mels= 128
+    f_min= 0
+    f_max= 11025
 
 
 def _converter_worker(args):
@@ -58,7 +68,9 @@ def _converter_worker(args):
 
     # load and convert to a log-mel spectrogram
     try:
+    
         wav, org_sr = librosa.load(str(from_dir/subpathname), mono=True, sr=prms.sample_rate)
+
 
         # pad if short
         if min_length is not None:
@@ -105,7 +117,7 @@ class ToLogMelSpec:
         return x
 
 
-def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix=['.wav','.mp3'], skip=0, min_length=6.1, verbose=True, params='FFT_parameters2'):
+def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/processing/output', suffix=['.wav','.mp3'], skip=0, min_length=6.1, verbose=True, params='FFT_parameters3'):
     
     if isinstance(suffix, str):
         suffix = [suffix]
@@ -130,7 +142,6 @@ def convert_wav(from_dir = '/opt/ml/processing/input', to_dir = '/opt/ml/process
                 shapes = list(tqdm(p.imap(_converter_worker, args), total=len(args)))
 
         print('finished.')
-
 
 if __name__ == "__main__":
     mp.set_start_method('spawn', force=True)
