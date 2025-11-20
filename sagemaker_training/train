@@ -1,0 +1,22 @@
+#!/bin/bash
+# This is the entry point that the docker container uses once it's launched on SageMaker
+set -eu -o pipefail
+FILE=/opt/ml/input/config/hyperparameters.json
+
+if [ -f $FILE ]; then
+  SCRIPT=$(jq -r .entrypoint < $FILE)
+  CONFIG=$(jq -r .cfg_fp < $FILE)
+  MODULE=$(echo "${SCRIPT%.*}" | tr / .)  # this converts from package/sub/module.py to package.sub.module
+  echo "==== ENTRYPOINT SUMMARY     ===="
+  echo "Executing script: ${SCRIPT}"
+  echo "Executing command: python -m ${MODULE} --config ${CONFIG}"
+  echo "==== ENTRYPOINT SUMMARY END ===="
+  pip list --format=freeze > pip_list.txt  # save the list of installed packages
+  cp -r . /opt/ml/model/src  # copy the source code to a folder that will be uploaded by sagemaker
+  python -m "${MODULE}" --config "${CONFIG}"
+else
+  echo "==== ENTRYPOINT SUMMARY     ===="
+  echo "Config file not found: ${FILE}"
+  echo "Quitting"
+  echo "==== ENTRYPOINT SUMMARY END ===="
+fi

@@ -1,0 +1,81 @@
+# FROM pytorch/pytorch:2.4.1-cuda11.8-cudnn9-runtime
+FROM pytorch/pytorch:2.1.0-cuda11.8-cudnn8-runtime
+# FROM pytorch/conda-builder:cuda11.8
+
+ARG LOCAL_DIR=/opt/ml/code
+
+# # Install essentials and fix hash sum mismatch errors on Macs
+RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
+    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99custom && \
+    echo "Acquire::BrokenProxy true;" >> /etc/apt/apt.conf.d/99custom
+
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --fix-missing --no-install-recommends \
+        curl \
+        unzip \
+        jq \
+        git \
+        wget && \
+    rm -rf /var/lib/apt/lists/*
+
+ARG REQ=requirements.txt
+COPY ./$REQ $LOCAL_DIR/$REQ
+RUN --mount=type=secret,id=github_token \
+    export GITHUB_TOKEN=$(cat /run/secrets/github_token) && \
+    pip install --no-cache-dir --no-dependencies -r $LOCAL_DIR/$REQ
+
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf awscliv2.zip aws
+
+# get aws credentials from secrets
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+
+RUN apt-get update && \
+    apt-get install -y tzdata && \
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime && \
+    dpkg-reconfigure --frontend noninteractive tzdata
+
+
+# # Copy SageMaker training script
+
+
+ENV PATH="$PATH:$LOCAL_DIR"
+
+ENV TOKENIZERS_PARALLELISM=false
+
+WORKDIR $LOCAL_DIR
+
+
+RUN pip uninstall s3fs -y
+RUN pip install --upgrade aiobotocore boto3
+RUN pip install s3fs
+
+
+RUN apt-get update && apt-get install -y libsndfile1 libmpg123-0 ffmpeg 
+
+RUN apt-get update && apt-get install libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev libgstreamer-plugins-bad1.0-dev gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav gstreamer1.0-tools gstreamer1.0-x gstreamer1.0-alsa gstreamer1.0-gl gstreamer1.0-gtk3 gstreamer1.0-qt5 gstreamer1.0-pulseaudio -y
+
+
+RUN pip install soxr
+
+RUN pip uninstall soundfile -y
+RUN pip install --upgrade soundfile
+
+RUN pip install s3torchconnector
+
+# # Install AWS CLI
+
+# # Copy project code
+COPY ./feat_extract $LOCAL_DIR/feat_extract
+COPY ./extract_dataset.py $LOCAL_DIR/extract_dataset.py
+
+## mount secrets from .secrets folder and get the wandb api key
+
+
+
+RUN --mount=type=secret,id=wandb_api_key \
+    export WANDB_API_KEY=$(cat /run/secrets/wandb_api_key) && \
+    wandb login $WANDB_API_KEY

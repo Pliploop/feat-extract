@@ -1,0 +1,16 @@
+[submodule "diffgar/models/clap"]
+	path = diffgar/models/clap
+	url = https://github.com/Pliploop/CLAP.git
+	branch = diffgar
+[submodule "diffgar/models/muscall"]
+	path = diffgar/models/muscall
+	url = https://github.com/Pliploop/muscall.git
+[submodule "feat_extract/models/muscall"]
+	path = feat_extract/models/muscall
+	url = https://github.com/Pliploop/muscall.git
+[submodule "feat_extract/models/clap"]
+	path = feat_extract/models/clap
+	url = https://github.com/Pliploop/CLAP.git
+[submodule "feat_extract/models/music2latent/music2latent"]
+	path = feat_extract/models/music2latent/music2latent
+	url = https://github.com/Pliploop/music2latent.git
