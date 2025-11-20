@@ -57,6 +57,15 @@ class FFT_parameters3:
     f_max= 11025
 
 
+class FFT_parameters_mulan:
+    sample_rate: 16000
+    n_fft: 1024
+    # window_size: 1024
+    # hop_size: 480
+    n_mels: 128
+    f_min: 0
+    f_max: 11025
+
 def _converter_worker(args):
     subpathname, from_dir, to_dir, prms, to_lms, suffix, min_length, verbose = args
     from_dir, to_dir = Path(from_dir), Path(to_dir)
